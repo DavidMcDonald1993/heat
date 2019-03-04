@@ -1,10 +1,7 @@
 from __future__ import print_function
 
-
 import os
 import h5py
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-os.environ["PYTHON_EGG_CACHE"] = "/rds/projects/2018/hesz01/attributed_hyperbolic/python-eggs"
 import multiprocessing 
 import re
 import argparse
@@ -124,29 +121,13 @@ class EmbeddingLayer(Layer):
 		self.embedding = self.add_weight(name='embedding', 
 		  shape=(self.num_nodes, self.embedding_dim),
 		  initializer=hyperboloid_initializer,
-		  trainable=True)
-		# self.context_embedding = self.add_weight(name='context_embedding', 
-		#   shape=(self.num_nodes, self.embedding_dim),
-		#   initializer=hyperboloid_initializer,
+		  trainable=True)nitializer,
 		#   trainable=True)
 		super(EmbeddingLayer, self).build(input_shape)
 
 
 
 	def call(self, x):
-		# x = K.cast(x, dtype=tf.int64)
-		# u = x[:,:1]
-		# v = x[:,1:2]
-		# neg_sample_idx = x[:,2:]
-		
-		# u_embedding = tf.gather(self.embedding, u)
-		# v_embedding = tf.gather(self.embedding, v)
-		# neg_samples_embedding = tf.gather(self.embedding, neg_sample_idx)
-
-		# # v_embedding = tf.gather(self.context_embedding, v)
-		# # neg_samples_embedding = tf.gather(self.context_embedding, neg_sample_idx)
-
-		# embedding = K.concatenate([u_embedding, v_embedding, neg_samples_embedding], axis=1)
 
 		embedding = tf.gather(self.embedding, x)
 
@@ -165,13 +146,9 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		learning_rate=0.1, 
 		use_locking=False,
 		name="ExponentialMappingOptimizer", 
-		# burnin=10, 
 		max_norm=np.inf):
 		super(ExponentialMappingOptimizer, self).__init__(use_locking, name)
 		self._lr = learning_rate
-		# self.burnin = burnin
-		# with K.name_scope(self.__class__.__name__):
-		# self.iterations = K.variable(0, dtype='int64', name='iterations')
 		self.max_norm = max_norm
 
 	def _prepare(self):
@@ -219,30 +196,13 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 			t = K.sqrt(1. + K.sum(K.square(x), axis=-1, keepdims=True))
 			return tf.concat([x, t], axis=-1)
 
-		# norm_x = K.sqrt( K.maximum(K.cast(0., K.floatx()), euclidean_dot(x, x) ) )
-		# norm_x = K.sqrt( K.maximum(K.cast(0., K.floatx()), minkowski_dot(x, x) ) )
 		norm_x = K.sqrt(  minkowski_dot(x, x) ) 
-		# clipped_norm_x = K.minimum(norm_x, self.max_norm)
-		clipped_norm_x = norm_x
-		# clipped_norm_x = K.constant(1e-3, )
-		####################################################
-		# exp_map_p = tf.cosh(clipped_norm_x) * p
-		
-		# idx = tf.cast( tf.where(norm_x > K.cast(0., K.floatx()), )[:,0], tf.int64)
-		# non_zero_norm = tf.gather(norm_x, idx)
-		# clipped_non_zero_norm = tf.gather(clipped_norm_x, idx)
-		# z = tf.gather(x, idx) / non_zero_norm
-
-		# updates = tf.sinh(clipped_non_zero_norm) * z
-		# dense_shape = tf.cast( tf.shape(p), tf.int64)
-		# exp_map_x = tf.scatter_nd(indices=idx[:,None], updates=updates, shape=dense_shape)
-		
-		# exp_map = exp_map_p + exp_map_x 
+		clipped_norm_x = K.minimum(norm_x, self.max_norm)
 		#####################################################
 		z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
 		exp_map = tf.cosh(clipped_norm_x) * p + tf.sinh(clipped_norm_x) * z
 		#####################################################
-		exp_map = adjust_to_hyperboloid(exp_map)
+		exp_map = adjust_to_hyperboloid(exp_map) # account for floating point inprecision
 
 		return exp_map
 
@@ -270,9 +230,6 @@ def build_model(num_nodes, args):
 		print ("Loading model from file: {}".format(model_file))
 		model.load_weights(model_file)
 
-		for w in model.layers[-1].get_weights():
-			print (w)
-
 		initial_epoch = int(saved_models[-1].split(".")[0])
 		print ("initial epoch={}".format(initial_epoch))
 
@@ -287,7 +244,7 @@ def parse_args():
 	'''
 	parse args from the command line
 	'''
-	parser = argparse.ArgumentParser(description="Hyperbolic Skipgram for feature learning on complex networks")
+	parser = argparse.ArgumentParser(description="HEAT algorithm for feature learning on complex networks")
 
 	parser.add_argument("--data-directory", dest="data_directory", type=str, default="/data/",
 		help="The directory containing data files (default is '/data/').")
@@ -299,17 +256,9 @@ def parse_args():
 	parser.add_argument("--seed", dest="seed", type=int, default=0,
 		help="Random seed (default is 0).")
 
-	parser.add_argument("-r", dest="r", type=float, default=3.,
-		help="Radius of hypercircle (default is 3).")
-	parser.add_argument("-t", dest="t", type=float, default=1.,
-		help="Steepness of logistic function (defaut is 1).")
-
 
 	parser.add_argument("--lr", dest="lr", type=float, default=3e-1,
 		help="Learning rate (default is 3e-1).")
-
-	parser.add_argument("--rho", dest="rho", type=float, default=0,
-		help="Minimum feature correlation (default is 0).")
 
 	parser.add_argument("-e", "--num_epochs", dest="num_epochs", type=int, default=5,
 		help="The number of epochs to train for (default is 5).")
@@ -322,8 +271,6 @@ def parse_args():
 	parser.add_argument("--patience", dest="patience", type=int, default=300,
 		help="The number of epochs of no improvement in validation loss before training is stopped. (Default is 300)")
 
-	parser.add_argument("--plot-freq", dest="plot_freq", type=int, default=10, 
-		help="Frequency for plotting (default is 10).")
 
 	parser.add_argument("-d", "--dim", dest="embedding_dim", type=int,
 		help="Dimension of embeddings for each layer (default is 2).", default=2)
@@ -337,19 +284,11 @@ def parse_args():
 	parser.add_argument('--walk-length', dest="walk_length", type=int, default=80, 
 		help="Length of random walk from source (default is 80).")
 
-	parser.add_argument("--alpha", dest="alpha", type=float, default=0,
-		help="weighting of attributes (default is 0).")
+	parser.add_argument("--sigma", dest="sigma", type=float, default=1,
+		help="Width of gaussian (default is 1).")
 
 
-	# parser.add_argument("--second-order", action="store_true", 
-	#   help="Use this flag to use second order topological similarity information.")
-	parser.add_argument("--no-attributes", action="store_true", 
-		help="Use this flag to not use attributes.")
-	# parser.add_argument("--add-attributes", action="store_true", 
-	#   help="Use this flag to add attribute sim to adj.")
-	parser.add_argument("--multiply-attributes", action="store_true", 
-		help="Use this flag to multiply attribute sim to adj.")
-	parser.add_argument("--jump-prob", dest="jump_prob", type=float, default=0, 
+	parser.add_argument("--alpha", dest="jump_prob", type=float, default=0, 
 		help="Probability of randomly jumping to a similar node when walking.")
 
 	parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", 
@@ -357,24 +296,11 @@ def parse_args():
 	parser.add_argument('--workers', dest="workers", type=int, default=2, 
 		help="Number of worker threads to generate training patterns (default is 2).")
 
-	# parser.add_argument("--distance", dest="distance", action="store_true", 
-	#   help="Use this flag to use hyperbolic distance loss.")
-	parser.add_argument("--sigmoid", dest="sigmoid", action="store_true", 
-		help="Use this flag to use sigmoid loss.")
-	parser.add_argument("--softmax", dest="softmax", action="store_true", 
-		help="Use this flag to use softmax loss.")
-	parser.add_argument("--euclidean", dest="euclidean", action="store_true", 
-		help="Use this flag to use euclidean negative sampling loss.")
-
 	
 	parser.add_argument("--plot", dest="plot_path", default="plots/", 
 		help="path to save plots (default is 'plots/)'.")
-	# parser.add_argument("--embeddings", dest="embedding_path", default="../embeddings/", 
-	#   help="path to save embeddings (default is '../embeddings/)'.")
 	parser.add_argument("--logs", dest="log_path", default="logs/", 
 		help="path to save logs (default is 'logs/)'.")
-	# parser.add_argument("--boards", dest="board_path", default="../tensorboards/", 
-	#   help="path to save tensorboards (default is '../tensorboards/)'.")
 	parser.add_argument("--walks", dest="walk_path", default="walks/", 
 		help="path to save random walks (default is 'walks/)'.")
 	parser.add_argument("--samples", dest="samples_path", default="samples/", 
@@ -384,20 +310,12 @@ def parse_args():
 	parser.add_argument("--test-results", dest="test_results_path", default="test_results/", 
 		help="path to save test results (default is 'test_results/)'.")
 
-	# parser.add_argument('--no-gpu', action="store_true", help='flag to train on cpu')
-
 	parser.add_argument('--only-lcc', action="store_true", help='flag to train on only lcc')
 
 	parser.add_argument('--evaluate-class-prediction', action="store_true", help='flag to evaluate class prediction')
 	parser.add_argument('--evaluate-link-prediction', action="store_true", help='flag to evaluate link prediction')
 
-
-	parser.add_argument('--directed', action="store_true", help='flag to train on directed graph')
-
 	parser.add_argument('--use-generator', action="store_true", help='flag to train using a generator')
-
-	parser.add_argument('--num-routing', dest="num_routing", type=int, default=0, 
-		help="Number of source-target pairs to evaluate (default is 0).")
 
 	args = parser.parse_args()
 	return args
