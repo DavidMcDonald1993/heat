@@ -8,12 +8,12 @@ import networkx as nx
 import random
 
 class Graph():
-	def __init__(self, graph, is_directed, p, q, jump_prob=0, feature_sim=None, seed=0):
+	def __init__(self, graph, is_directed, p, q, alpha=0, feature_sim=None, seed=0):
 		self.graph = graph
 		self.is_directed = is_directed
 		self.p = p
 		self.q = q
-		self.jump_prob = jump_prob
+		self.alpha = alpha
 		self.feature_sim = feature_sim 
 		np.random.seed(seed)
 		random.seed(seed)
@@ -36,7 +36,7 @@ class Graph():
 			# node2vec style random walk 
 			cur_nbrs = sorted(graph.neighbors(cur))
 
-			if not (feature_sim[cur]==0).all() and self.jump_prob > 0 and (np.random.rand() < self.jump_prob or len(cur_nbrs) == 0):
+			if not (feature_sim[cur]==0).all() and self.alpha > 0 and (np.random.rand() < self.alpha or len(cur_nbrs) == 0):
 				# random jump based on attribute similarity
 				next_ = np.random.choice(len(feature_sim), replace=False, p=feature_sim[cur])
 				walk.append(next_)

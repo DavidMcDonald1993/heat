@@ -13,6 +13,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 import pandas as pd
 
+def hyperboloid_to_poincare_ball(X):
+	return X[:,:-1] / (1 + X[:,-1,None])
+
+def hyperboloid_to_klein(X):
+	return X[:,:-1] / X[:,-1,None]
 
 
 
@@ -72,54 +77,19 @@ def convert_edgelist_to_dict(edgelist, undirected=True, self_edges=False):
 		else:
 			default = set()
 		edge_dict.setdefault(u, default).add(v)
-		# if undirected:
-		# 	edge_dict.setdefault(v, default).add(u)
-
-	# for u, v in edgelist:
-	# 	assert v in edge_dict[u]
-	# 	if undirected:
-	# 		assert u in edge_dict[v]
-	# raise SystemExit
 	edge_dict = {k: list(v) for k, v in edge_dict.items()}
 
 	return edge_dict
 
-def get_training_sample(batch_positive_samples, negative_samples, num_negative_samples, probs, alias_dict):
+def build_training_samples(batch_positive_samples, negative_samples, num_negative_samples, alias_dict):
 	input_nodes = batch_positive_samples[:,0]
 
 	batch_negative_samples = np.array([
-		# np.random.choice(negative_samples[u], 
-		# replace=True, size=(num_negative_samples,), 
-		# p=probs[u] if probs is not None else probs
-		# )
 		negative_samples[u][alias_draw(alias_dict[u][0], alias_dict[u][1], num_negative_samples)]
 		for u in input_nodes
 	], dtype=np.int64)
 	batch_nodes = np.append(batch_positive_samples, batch_negative_samples, axis=1)
 	return batch_nodes
-
-# def make_validation_data(val_edges, val_non_edges, negative_samples, alias_dict, args):
-
-# 	val_edges = val_edges + [(v, u) for u, v in val_edges]
-
-# 	if not isinstance(val_edges, np.ndarray):
-# 		val_edges = np.array(val_edges)
-# 	idx = np.arange(len(val_edges))
-# 	positive_samples = val_edges[idx]
-
-# 	val_negative_samples = np.array([
-# 		negative_samples[u][alias_draw(alias_dict[u][0], alias_dict[u][1], args.num_negative_samples)]
-# 		for u in positive_samples[:,0]
-# 	])
-
-# 	x = np.append(positive_samples, val_negative_samples, axis=-1)
-
-# 	y = np.zeros(len(x))
-# 	# y = np.zeros((len(x), args.num_positive_samples + args.num_negative_samples, 1))
-# 	# y[:,0] = 1.
-
-# 	return x, y
-
 
 def create_second_order_topology_graph(topology_graph, args):
 
@@ -182,42 +152,25 @@ def determine_positive_and_negative_samples(nodes, walks, context_size, directed
 		for i in range(len(walk)):
 			u = walk[i]
 			counts[u] += 1	
-			# for j in range(len(walk) - i):
 			for j in range(context_size):
 				if i+j+1 >= len(walk):
 					break
 				v = walk[i+j+1]
 				if u == v:
 					continue
-				n = 1
-				# n = context_size - j
 				if j < context_size: 
-					positive_samples.extend([(u, v)] * n)
-					positive_samples.extend([(v, u)] * n)
+					positive_samples.extend([(u, v)])
+					positive_samples.extend([(v, u)])
 
 					all_positive_samples[u].add(v)
 					all_positive_samples[v].add(u)
-
-				# elif j < 3:
-				# 	neighbourhood_samples[u].add(v)
-				# 	neighbourhood_samples[v].add(u)
-				# else: 
-				# 	negative_samples[u].add(v)
-					# negative_samples[v].add(u)
 
 
 		if num_walk % 1000 == 0:  
 			print ("processed walk {:05d}/{}".format(num_walk, len(walks)))
 
-	# neighbourhood_samples = {n : list(v) for n, v in neighbourhood_samples.items()}
-	# negative_samples = {n : np.array(list(v)) for n, v in negative_samples.items()}
-
 	negative_samples = {n: np.array(sorted(nodes.difference(all_positive_samples[n]))) for n in sorted(nodes)}
-	# negative_samples = {n: np.array(sorted(all_positive_samples[n])) for n in sorted(nodes)}
-	# negative_samples = {n : np.array(sorted(nodes)) for n in sorted(nodes)}
-	# negative_samples = {n: np.array(sorted(neg_samples)) for n, neg_samples in negative_samples.items()}
 	for u, neg_samples in negative_samples.items():
-		# print ("node {} has {} negative samples".format(u, len(neg_samples)))
 		assert len(neg_samples) > 0, "node {} does not have any negative samples".format(u)
 
 	print ("DETERMINED POSITIVE AND NEGATIVE SAMPLES")
@@ -225,7 +178,6 @@ def determine_positive_and_negative_samples(nodes, walks, context_size, directed
 
 	counts = np.array(list(counts.values())) ** 0.75
 	probs = counts #/ counts.sum()
-	# probs = np.ones_like(counts)
 
 	prob_dict = {n: probs[negative_samples[n]] for n in sorted(nodes)}
 	prob_dict = {n: p / p.sum() for n, p in prob_dict.items()}
@@ -234,36 +186,7 @@ def determine_positive_and_negative_samples(nodes, walks, context_size, directed
 
 	print ("PREPROCESSED NEGATIVE SAMPLE PROBS")
 
-	return positive_samples, negative_samples, prob_dict, alias_dict
-
-def determine_walk_file():
-
-	if args.alpha > 0:
-		assert features is not None
-		walk_file = os.path.join(args.walk_path, "add_attributes_alpha={}".format(args.alpha))
-		A = nx.adjacency_matrix(graph).A
-		np.fill_diagonal(A, 1)
-		A /= np.maximum(A.sum(axis=-1, keepdims=True), 1e-15)
-		# assert ((A.sum(-1) - 1)<1e-7).all(), A
-		# assert ((feature_sim.sum(-1) - 1) < 1e-7).all()
-		adj = (1. - args.alpha) * A + args.alpha * feature_sim
-		# assert ((adj.sum(axis=-1) - 1) < 1e-7).all()
-		g = nx.from_numpy_matrix(adj)
-	elif args.multiply_attributes:
-		assert features is not None
-		walk_file = os.path.join(args.walk_path, "multiply_attributes")
-		A = nx.adjacency_matrix(graph).A
-		g = nx.from_numpy_matrix(A * feature_sim)
-	elif args.jump_prob > 0:
-		assert features is not None
-		walk_file = os.path.join(args.walk_path, "jump_prob={}".format(args.jump_prob))
-		g = graph
-	else:
-		walk_file = os.path.join(args.walk_path, "no_attributes")
-		g = graph
-	walk_file += "_num_walks={}-walk_len={}-p={}-q={}.walk".format(args.num_walks, 
-				args.walk_length, args.p, args.q)
-
+	return positive_samples, negative_samples, alias_dict
 
 def perform_walks(graph, features, args):
 
@@ -301,23 +224,9 @@ def perform_walks(graph, features, args):
 
 		if args.alpha > 0:
 			assert features is not None
-			A = nx.adjacency_matrix(graph).A
-			np.fill_diagonal(A, 1)
-			A /= np.maximum(A.sum(axis=-1, keepdims=True), 1e-15)
-			adj = (1. - args.alpha) * A + args.alpha * feature_sim
-			g = nx.from_numpy_matrix(adj)
-		elif args.multiply_attributes:
-			assert features is not None
-			A = nx.adjacency_matrix(graph).A
-			g = nx.from_numpy_matrix(A * feature_sim)
-		elif args.jump_prob > 0:
-			assert features is not None
-			g = graph
-		else:
-			g = graph
 
-		node2vec_graph = Graph(graph=g, is_directed=False, p=args.p, q=args.q,
-			jump_prob=args.jump_prob, feature_sim=feature_sim, seed=args.seed)
+		node2vec_graph = Graph(graph=graph, is_directed=False, p=args.p, q=args.q,
+			alpha=args.alpha, feature_sim=feature_sim, seed=args.seed)
 		node2vec_graph.preprocess_transition_probs()
 		walks = node2vec_graph.simulate_walks(num_walks=args.num_walks, walk_length=args.walk_length)
 		save_walks_to_file(walks, walk_file)

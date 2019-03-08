@@ -123,12 +123,7 @@ def draw_graph(edges, embedding, labels, path, ):
     print ("saving two-dimensional poincare plot to {}".format(path))
 
     fig = plt.figure()
-    title = "Dimensional poincare plot"
-    # title = "Mean_rank_recon={}, AP_recon={}, AUROC_recon={}".format(mean_rank_reconstruction, 
-    #     map_reconstruction, mean_roc_reconstruction)
-    # if mean_rank_lp is not None:
-    #     title += "\nMean_rank_lp={}, AP_lp={}, AUROC_lp={}".format(mean_rank_lp,
-    #         map_lp, mean_roc_lp)
+    title = "Two dimensional poincare plot"
     plt.suptitle(title)
     
     ax = fig.add_subplot(111)
@@ -139,8 +134,8 @@ def draw_graph(edges, embedding, labels, path, ):
     b = embedding[edges[:,1]]
     c = get_third_point(a, b)
     
-    draw_geodesic(a, b, c, ax, )
-    ax.scatter(embedding[:,0], embedding[:,1], c=colors[labels], s=10, zorder=2)
+    draw_geodesic(a, b, c, ax)
+    ax.scatter(embedding[:,0], embedding[:,1], c=labels, s=10, zorder=2)
 
     plt.savefig(path)
     plt.close()
