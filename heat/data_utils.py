@@ -73,7 +73,7 @@ def load_karate(args):
 
 	return graph, features, labels
 
-def load_g2g_datasets(dataset_str, args, scale=True):
+def load_g2g_datasets(dataset_str, scale=True):
 
 	"""Load a graph from a Numpy binary file.
 	Parameters
@@ -89,7 +89,7 @@ def load_g2g_datasets(dataset_str, args, scale=True):
 			* 'z' : The ground truth class labels
 			* Further dictionaries mapping node, class and attribute IDs
 	"""
-	file_name = os.path.join(args.data_directory,"g2g_datasets")
+	file_name = os.path.join("/data","g2g_datasets")
 	file_name = os.path.join(file_name, dataset_str)
 	if not file_name.endswith('.npz'):
 		file_name += '.npz'
@@ -123,21 +123,10 @@ def load_g2g_datasets(dataset_str, args, scale=True):
 			idx_to_class = idx_to_class.tolist()
 			graph_dict['idx_to_class'] = idx_to_class
 
-	if args.directed:
-		create_using = nx.DiGraph()
-	else:
-		create_using = nx.Graph() 
 
-	graph = nx.from_scipy_sparse_matrix(graph_dict["A"], create_using=create_using)
+	graph = nx.from_scipy_sparse_matrix(graph_dict["A"], create_using=nx.DiGraph())
 	features = graph_dict["X"].A
 	labels = graph_dict["z"]
-
-	if args.only_lcc:
-		graph = max(nx.connected_component_subgraphs(graph), key=len)
-		features = features[graph.nodes()]
-		labels = labels[graph.nodes()]
-		graph = nx.convert_node_labels_to_integers(graph, label_attribute="original_name")
-		nx.set_edge_attributes(G=graph, name="weight", values=1.)
 
 	if scale:
 		scaler = StandardScaler()

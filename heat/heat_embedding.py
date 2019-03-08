@@ -17,12 +17,11 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 
-from data_utils import load_data
+from utils import build_training_samples, hyperboloid_to_poincare_ball, load_data
 from utils import perform_walks, determine_positive_and_negative_samples
 from losses import  hyperbolic_softmax_loss
 from generators import TrainingDataGenerator
 from visualise import draw_graph
-from utils import build_training_samples, hyperboloid_to_poincare_ball
 
 from keras.layers import Input, Layer, Dense, Embedding
 from keras.models import Model
