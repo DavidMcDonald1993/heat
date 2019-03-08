@@ -1,4 +1,4 @@
 heat/data_utils.py
-heat/clustering_hyperboloid/py
+heat/clustering_hyperboloid.py
 heat/greedy_routing.py
 heat/tree.py
