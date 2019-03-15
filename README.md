@@ -1,11 +1,16 @@
-## HEAT: Hyperbolic Embedding of Attributed Networks
+# HEAT: Hyperbolic Embedding of Attributed Networks
 Implementation of algorithm described in https://arxiv.org/abs/1903.03036
 
-# Requirements
+## Requirements
+Python3
+Numpy
+Scipy
+Scikit-learn
+Keras
 
-# How to use:
+## How to use:
 
-# Citation
+## Citation
 If you find this useful, please use the following citation
 @misc{mcdonald2019heat,
     title={HEAT: Hyperbolic Embedding of Attributed Networks},
