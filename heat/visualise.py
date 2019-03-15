@@ -135,7 +135,7 @@ def draw_graph(edges, embedding, labels, path, ):
     c = get_third_point(a, b)
     
     draw_geodesic(a, b, c, ax)
-    ax.scatter(embedding[:,0], embedding[:,1], c=labels, s=10, zorder=2)
+    ax.scatter(embedding[:,0], embedding[:,1], c=labels, s=50, zorder=2)
 
     plt.savefig(path)
     plt.close()

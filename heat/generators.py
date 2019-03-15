@@ -17,9 +17,6 @@ class TrainingDataGenerator(Sequence):
 		self.batch_size = args.batch_size
 		self.num_negative_samples = args.num_negative_samples
 
-		# self.num_neighbours = 0
-		# self.neighbour_weight = 0.01
-
 	def alias_draw(self, J, q, size=1):
 	    '''
 	    Draw sample from a non-uniform discrete distribution using alias sampling.

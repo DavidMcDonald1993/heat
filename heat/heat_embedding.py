@@ -188,6 +188,19 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 
 		norm_x = K.sqrt(  minkowski_dot(x, x) ) 
 		clipped_norm_x = K.minimum(norm_x, self.max_norm)
+		####################################################
+		# exp_map_p = tf.cosh(clipped_norm_x) * p
+		
+		# idx = tf.cast( tf.where(norm_x > K.cast(0., K.floatx()), )[:,0], tf.int64)
+		# non_zero_norm = tf.gather(norm_x, idx)
+		# clipped_non_zero_norm = tf.gather(clipped_norm_x, idx)
+		# z = tf.gather(x, idx) / non_zero_norm
+
+		# updates = tf.sinh(clipped_non_zero_norm) * z
+		# dense_shape = tf.cast( tf.shape(p), tf.int64)
+		# exp_map_x = tf.scatter_nd(indices=idx[:,None], updates=updates, shape=dense_shape)
+		
+		# exp_map = exp_map_p + exp_map_x 
 		#####################################################
 		z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
 		exp_map = tf.cosh(clipped_norm_x) * p + tf.sinh(clipped_norm_x) * z
@@ -273,24 +286,11 @@ def parse_args():
 	parser.add_argument('--workers', dest="workers", type=int, default=2, 
 		help="Number of worker threads to generate training patterns (default is 2).")
 
-	# parser.add_argument("--plot", dest="plot_path", default="plots/", 
-	# 	help="path to save plots (default is 'plots/)'.")
-	# parser.add_argument("--logs", dest="log_path", default="logs/", 
-	# 	help="path to save logs (default is 'logs/)'.")
 	parser.add_argument("--walks", dest="walk_path", default="walks/cora_ml", 
 		help="path to save random walks (default is 'walks/cora_ml)'.")
-	# parser.add_argument("--samples", dest="samples_path", default="samples/", 
-	# 	help="path to save positive/negative samples (default is 'samples/)'.")
-	# parser.add_argument("--model", dest="model_path", default="models/", 
-	# 	help="path to save model after each epoch (default is 'models/)'.")
-	# parser.add_argument("--test-results", dest="test_results_path", default="test_results/", 
-	# 	help="path to save test results (default is 'test_results/)'.")
 
 	parser.add_argument("--embedding", dest="embedding_path", default="embeddings/cora_ml", 
 		help="path to save embedings (default is 'embeddings/cora_ml/)'.")
-
-	# parser.add_argument('--evaluate-class-prediction', action="store_true", help='flag to evaluate class prediction')
-	# parser.add_argument('--evaluate-link-prediction', action="store_true", help='flag to evaluate link prediction')
 
 	parser.add_argument('--directed', action="store_true", help='flag to train on directed graph')
 
@@ -345,17 +345,6 @@ def main():
 	tf.set_random_seed(args.seed)
 
 	graph, features, node_labels = load_data(args)
-
-	core = graph.subgraph([n for n in graph.nodes() if node_labels[n] == 0]) 
-	periphery_in = graph.subgraph([n for n in graph.nodes() if node_labels[n] == 1])
-	periphery_out = graph.subgraph([n for n in graph.nodes() if node_labels[n] == 2])
-
-	# for n1 in periphery_in.nodes():
-	# 	for n2 in periphery_out.nodes():
-	# 		assert not (n1, n2) in graph.edges(), (n1, n2)
-	# 		assert not (n2, n1) in graph.edges(), (n2, n1, labels[n1], labels[n2])
-	# print("passed")
-
 	print ("Loaded dataset")
 
 	configure_paths(args)
@@ -369,7 +358,6 @@ def main():
 		directed_edges = None
 
 	graph = graph.to_undirected() # we perform walks on undirected matrix
-
 	# original edges for reconstruction
 	undirected_edges = graph.edges()
 
@@ -427,9 +415,9 @@ def main():
 		)
 
 	embedding = model.get_weights()[-1]
-	print ("Training complete, saving embedding to {}".format(args.embedding_path))
+	print ("Training complete, saving embedding to {}".format(args.embedding_filename))
 
-	embedding_df = pd.DataFrame(embedding, index=graph.nodes())
+	embedding_df = pd.DataFrame(embedding, index=[graph.node[n]["original_name"] for n in graph.nodes()])
 	embedding_df.to_csv(args.embedding_filename)
 
 	if args.visualise:

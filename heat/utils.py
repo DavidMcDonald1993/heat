@@ -48,7 +48,7 @@ def load_data(args):
 	else:
 		labels = None
 
-	graph = nx.convert_node_labels_to_integers(graph)
+	graph = nx.convert_node_labels_to_integers(graph, label_attribute="original_name")
 
 	return graph, features, labels
 
@@ -57,8 +57,6 @@ def hyperboloid_to_poincare_ball(X):
 
 def hyperboloid_to_klein(X):
 	return X[:,:-1] / X[:,-1,None]
-
-
 
 def alias_setup(probs):
 	'''

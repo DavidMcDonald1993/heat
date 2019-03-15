@@ -8,7 +8,7 @@ def minkowski_dot(x, y):
     axes = len(x.shape) - 1, len(y.shape) -1
     return K.batch_dot(x[...,:-1], y[...,:-1], axes=axes) - K.batch_dot(x[...,-1:], y[...,-1:], axes=axes)
 
-def hyperbolic_softmax_loss(sigma=1):
+def hyperbolic_softmax_loss(sigma=1.):
 
     def loss(y_true, y_pred, sigma=sigma):
 
