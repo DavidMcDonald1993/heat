@@ -116,7 +116,6 @@ class EmbeddingLayer(Layer):
 		  trainable=True)
 		super(EmbeddingLayer, self).build(input_shape)
 
-
 	def call(self, x):
 
 		embedding = tf.gather(self.embedding, x)
@@ -189,23 +188,23 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		norm_x = K.sqrt(  minkowski_dot(x, x) ) 
 		clipped_norm_x = K.minimum(norm_x, self.max_norm)
 		####################################################
-		# exp_map_p = tf.cosh(clipped_norm_x) * p
+		exp_map_p = tf.cosh(clipped_norm_x) * p
 		
-		# idx = tf.cast( tf.where(norm_x > K.cast(0., K.floatx()), )[:,0], tf.int64)
-		# non_zero_norm = tf.gather(norm_x, idx)
-		# clipped_non_zero_norm = tf.gather(clipped_norm_x, idx)
-		# z = tf.gather(x, idx) / non_zero_norm
+		idx = tf.cast( tf.where(norm_x > K.cast(0., K.floatx()), )[:,0], tf.int64)
+		non_zero_norm = tf.gather(norm_x, idx)
+		clipped_non_zero_norm = tf.gather(clipped_norm_x, idx)
+		z = tf.gather(x, idx) / non_zero_norm
 
-		# updates = tf.sinh(clipped_non_zero_norm) * z
-		# dense_shape = tf.cast( tf.shape(p), tf.int64)
-		# exp_map_x = tf.scatter_nd(indices=idx[:,None], updates=updates, shape=dense_shape)
+		updates = tf.sinh(clipped_non_zero_norm) * z
+		dense_shape = tf.cast( tf.shape(p), tf.int64)
+		exp_map_x = tf.scatter_nd(indices=idx[:,None], updates=updates, shape=dense_shape)
 		
-		# exp_map = exp_map_p + exp_map_x 
+		exp_map = exp_map_p + exp_map_x 
 		#####################################################
-		z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
-		exp_map = tf.cosh(clipped_norm_x) * p + tf.sinh(clipped_norm_x) * z
+		# z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
+		# exp_map = tf.cosh(clipped_norm_x) * p + tf.sinh(clipped_norm_x) * z
 		#####################################################
-		exp_map = adjust_to_hyperboloid(exp_map) # account for floating point inprecision
+		exp_map = adjust_to_hyperboloid(exp_map) # account for floating point imprecision
 
 		return exp_map
 
@@ -422,7 +421,9 @@ def main():
 
 	if args.visualise:
 		embedding = hyperboloid_to_poincare_ball(embedding)
-		draw_graph(undirected_edges, embedding, node_labels, path="test.png")
+		assert args.directed
+		draw_graph(undirected_edges if not args.directed else directed_edges, 
+			embedding, node_labels, path="2d-poincare-visualisation.png")
 
 if __name__ == "__main__":
 	main()

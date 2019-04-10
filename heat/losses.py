@@ -16,7 +16,8 @@ def hyperbolic_softmax_loss(sigma=1.):
         samples_emb = y_pred[:,1:]
         
         inner_uv = minkowski_dot(u_emb, samples_emb) 
-        inner_uv = -inner_uv - 1. + 1e-7 #K.epsilon()
+        inner_uv = -inner_uv - 1. + K.epsilon()#+ 1e-7
+        inner_uv = K.maximum(inner_uv, K.epsilon())
 
         d_uv = tf.acosh(1. + inner_uv) 
 

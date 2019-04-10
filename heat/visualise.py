@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle, Wedge, Polygon
+from matplotlib.patches import Circle, Wedge, Polygon, ArrowStyle
 from matplotlib.collections import PatchCollection
 from matplotlib import patches
 import collections
@@ -106,12 +106,40 @@ def draw_geodesic(a, b, c, ax, c1=None, c2=None, verbose=False, width=.1):
     coordsA = "data"
     coordsB = "data"
 
-    for ma_, a_, b_, cent_, radius_, theta1_, theta2_ in zip(mask_, a, b, cent, radius, theta1, theta2):
-        if ma_:
-            e = patches.ConnectionPatch(a_, b_, coordsA, coordsB, linewidth=width, zorder=0)
+    for ma_, a_, b_, c_, cent_, radius_, theta1_, theta2_ in zip(mask_, a, b, c, cent, radius, theta1, theta2):
+        if np.random.rand() > .05:
+            continue
+        # if ma_:
+        if True:
+            e = patches.ConnectionPatch(a_, b_, coordsA, coordsB, 
+                linewidth=0.05, 
+                zorder=0, 
+                arrowstyle="Simple,tail_width=.01,head_width=.6,head_length=1.", 
+                fc="k"
+                )
+            # e = patches.FancyArrowPatch(a_, b_, arrowstyle="Simple,tail_width=0.05,head_width=4,head_length=8", 
+            #     color="k", zorder=0, alpha=.4, fc="r")
         else:
-            e = patches.Arc((cent_[0], cent_[1]), 2*radius_, 2*radius_,
-                             theta1=theta1_, theta2=theta2_, linewidth=width, fill=False, zorder=0)
+            # e = patches.Arc((cent_[0], cent_[1]), 2*radius_, 2*radius_,
+                             # theta1=theta1_, theta2=theta2_, linewidth=width, fill=False, zorder=0)
+            armA = np.linalg.norm(a_ - c_)
+            c_prime = c_ - a_
+            a_prime = np.array([c_prime[0], 0])
+            angleA = np.arccos( (c_prime).dot(a_prime) / (np.linalg.norm(c_prime) * np.linalg.norm(a_prime)) )
+            armB = np.linalg.norm(b_ - c_)
+            c_prime = c_ - b_
+            b_prime = np.array([c_prime[0], 0])
+            angleB = np.arccos( (c_prime).dot(b_prime) / (np.linalg.norm(c_prime) * np.linalg.norm(b_prime)) )
+            e = patches.FancyArrowPatch(a_, b_, 
+                arrowstyle="Simple,tail_width=.01,head_width=.6,head_length=1.", 
+                # arrowstyle="CurveB,head_length=0.4,head_width=0.2",
+                # arrowstyle=ArrowStyle("->", head_length=0.4, head_width=0.2),
+                color="k", 
+                # connectionstyle="arc,armA={},angleA={}".format(armA, np.rad2deg(angleA)), 
+                connectionstyle="arc,armA={},angleA={},armB={},angleB={}".format(armA, np.rad2deg(angleA), armB, np.rad2deg(angleB)), 
+                zorder=0, 
+                alpha=.4, 
+                fc="k")
         ax.add_patch(e)
 
 def draw_graph(edges, embedding, labels, path, ):
