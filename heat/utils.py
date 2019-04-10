@@ -13,6 +13,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 import pandas as pd
 
+import pickle as pkl
+
 def load_data(args):
 
 	edgelist_filename = args.edgelist
@@ -42,6 +44,11 @@ def load_data(args):
 			labels = pd.read_csv(labels_filename, index_col=0, sep=",")
 			labels = labels.reindex(graph.nodes()).values.flatten()
 			assert len(labels.shape) == 1
+		if labels_filename.endswith(".pkl"):
+			with open(labels_filename, "rb") as f:
+				labels = pkl.load(f)
+			label_map = {label: i for i, label in enumerate(set(labels.values()))}
+			labels = np.array([label_map[labels[n]] for n in graph.nodes()])
 		else:
 			raise Exception
 

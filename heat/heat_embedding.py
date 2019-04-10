@@ -38,7 +38,6 @@ K.set_epsilon(1e-15)
 
 np.set_printoptions(suppress=True)
 
-
 # TensorFlow wizardry
 config = tf.ConfigProto()
 
@@ -59,7 +58,7 @@ def gans_to_hyperboloid(x):
 	return tf.concat([x, t], axis=-1)
 
 def euclidean_dot(x, y):
-    axes = len(x.shape) - 1, len(y.shape) -1
+    axes = len(x.shape) - 1, len(y.shape) - 1
     return K.batch_dot(x, y, axes=axes)
 
 def minkowski_dot(x, y):
@@ -204,7 +203,7 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		# z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
 		# exp_map = tf.cosh(clipped_norm_x) * p + tf.sinh(clipped_norm_x) * z
 		#####################################################
-		exp_map = adjust_to_hyperboloid(exp_map) # account for floating point imprecision
+		# exp_map = adjust_to_hyperboloid(exp_map) # account for floating point imprecision
 
 		return exp_map
 
@@ -260,7 +259,6 @@ def parse_args():
 	parser.add_argument("--patience", dest="patience", type=int, default=300,
 		help="The number of epochs of no improvement in validation loss before training is stopped. (Default is 300)")
 
-
 	parser.add_argument("-d", "--dim", dest="embedding_dim", type=int,
 		help="Dimension of embeddings for each layer (default is 2).", default=2)
 
@@ -275,7 +273,6 @@ def parse_args():
 
 	parser.add_argument("--sigma", dest="sigma", type=float, default=1,
 		help="Width of gaussian (default is 1).")
-
 
 	parser.add_argument("--alpha", dest="alpha", type=float, default=0, 
 		help="Probability of randomly jumping to a similar node when walking.")
@@ -297,7 +294,6 @@ def parse_args():
 
 	parser.add_argument('--visualise', action="store_true", 
 		help='flag to visualise embedding (embedding_dim must be 2)')
-
 
 	args = parser.parse_args()
 	return args
@@ -332,8 +328,6 @@ def configure_paths(args):
 	args.embedding_filename = os.path.join(args.embedding_path, "embedding.csv")
 	
 def main():
-
-	print ("Beginning execution")
 
 	args = parse_args()
 
@@ -385,7 +379,7 @@ def main():
 				negative_samples,
 				args.num_negative_samples, 
 				alias_dict)
-		train_y = np.zeros(len(train_x), dtype=np.int64)
+		train_y = np.zeros([len(train_x), 1], dtype=np.int64)
 
 	if args.use_generator:
 		print ("Training with data generator with {} worker threads".format(args.workers))
@@ -421,7 +415,7 @@ def main():
 
 	if args.visualise:
 		embedding = hyperboloid_to_poincare_ball(embedding)
-		assert args.directed
+		# assert args.directed
 		draw_graph(undirected_edges if not args.directed else directed_edges, 
 			embedding, node_labels, path="2d-poincare-visualisation.png")
 

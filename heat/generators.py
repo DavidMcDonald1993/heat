@@ -53,7 +53,7 @@ class TrainingDataGenerator(Sequence):
 			positive_samples[batch_idx * batch_size : (batch_idx + 1) * batch_size], dtype=np.int64)
 		training_sample = self.get_training_sample(batch_positive_samples)
 		
-		target = np.zeros((training_sample.shape[0],  ))
+		target = np.zeros((training_sample.shape[0],  1))
 		
 		return training_sample, target
 
