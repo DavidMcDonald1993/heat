@@ -88,7 +88,7 @@ def get_angles(cent, a):
     
     return theta
 
-def draw_geodesic(a, b, c, ax, c1=None, c2=None, verbose=False, width=.1):
+def draw_geodesic(a, b, c, ax, c1=None, c2=None, verbose=False, width=.05):
    
     cent = get_circle_center(a,b,c)  
     radius = euclid_dist(a, cent)
@@ -107,15 +107,15 @@ def draw_geodesic(a, b, c, ax, c1=None, c2=None, verbose=False, width=.1):
     coordsB = "data"
 
     for ma_, a_, b_, c_, cent_, radius_, theta1_, theta2_ in zip(mask_, a, b, c, cent, radius, theta1, theta2):
-        if np.random.rand() > .05:
-            continue
+        # if np.random.rand() > .05:
+        #     continue
         if ma_:
         # if True:
             e = patches.ConnectionPatch(a_, b_, coordsA, coordsB, 
-                linewidth=0.05, 
+                linewidth=width, 
                 zorder=0, 
                 # arrowstyle="Simple,tail_width=.01,head_width=.6,head_length=1.", 
-                fc="k"
+                # fc="k"
                 )
             # e = patches.FancyArrowPatch(a_, b_, arrowstyle="Simple,tail_width=0.05,head_width=4,head_length=8", 
             #     color="k", zorder=0, alpha=.4, fc="r")
@@ -142,7 +142,7 @@ def draw_geodesic(a, b, c, ax, c1=None, c2=None, verbose=False, width=.1):
             #     fc="k")
         ax.add_patch(e)
 
-def draw_graph(edges, embedding, labels, path, ):
+def draw_graph(edges, embedding, labels, path, s=25):
     assert embedding.shape[1] == 2 
 
     if not isinstance(edges, np.ndarray):
@@ -163,7 +163,21 @@ def draw_graph(edges, embedding, labels, path, ):
     c = get_third_point(a, b)
     
     draw_geodesic(a, b, c, ax)
-    ax.scatter(embedding[:,0], embedding[:,1], c=labels, s=50, zorder=2)
+
+    if labels is not None and len(labels.shape) == 2:
+        core_nodes = labels[:,1].astype(np.bool)
+        ax.scatter(embedding[core_nodes,0], embedding[core_nodes,1], 
+            c=["r" if l==0 else "g" if l==1 else "b" for l in labels[core_nodes,0]],
+            marker="o",
+            s=s, zorder=2)
+        ax.scatter(embedding[~core_nodes,0], embedding[~core_nodes,1], 
+            c=["r" if l==0 else "g" if l==1 else "b" for l in labels[~core_nodes,0]],
+            marker="X",
+            s=s, zorder=2)
+    else:
+        ax.scatter(embedding[:,0], embedding[:,1], 
+            c=labels,
+            s=s, zorder=2)
 
     plt.savefig(path)
     plt.close()

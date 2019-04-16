@@ -1,5 +1,5 @@
 # HEAT: Hyperbolic Embedding of Attributed Networks
-Implementation of algorithm described in https://arxiv.org/abs/1903.03036
+Reference implementation of algorithm described in https://arxiv.org/abs/1903.03036
 
 ## Requirements:
 Python3
@@ -9,6 +9,17 @@ Scikit-learn
 Keras
 
 ## How to use:
+TODO
+
+## Input Data Format
+TODO
+edgelists should be preprocessed in the form 
+u\tv\tw
+where w is the weight of the connection between nodes u and v
+u and v should be integers
+every int in [0, N-1] must appear in the edgelist
+
+labels and features should be comma separated tables indexed by node id
 
 ## Citation:
 If you find this useful, please use the following citation

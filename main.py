@@ -17,12 +17,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 
-from utils import build_training_samples, hyperboloid_to_poincare_ball, load_data
-from utils import perform_walks, determine_positive_and_negative_samples
-from losses import  hyperbolic_softmax_loss
-from generators import TrainingDataGenerator
-from visualise import draw_graph
-
 from keras.layers import Input, Layer, Dense, Embedding
 from keras.models import Model
 from keras import backend as K
@@ -32,6 +26,12 @@ import tensorflow as tf
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import math_ops, control_flow_ops
 from tensorflow.python.training import optimizer
+
+from heat.utils import build_training_samples, hyperboloid_to_poincare_ball, load_data
+from heat.utils import perform_walks, determine_positive_and_negative_samples
+from heat.losses import  hyperbolic_softmax_loss
+from heat.generators import TrainingDataGenerator
+from heat.visualise import draw_graph
 
 K.set_floatx("float64")
 K.set_epsilon(1e-15)
@@ -166,6 +166,7 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		t_grad = - values[:, -1:]
 
 		ambient_grad = tf.concat([spacial_grad, t_grad], axis=-1, name="optimizer_concat")
+
 		tangent_grad = self.project_onto_tangent_space(p, ambient_grad)
 		exp_map = self.exponential_mapping(p, - lr_t * tangent_grad)
 
@@ -174,8 +175,7 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		return out
 	
 	def project_onto_tangent_space(self, hyperboloid_point, minkowski_ambient):
-		tang = minkowski_ambient + minkowski_dot(hyperboloid_point, minkowski_ambient) * hyperboloid_point
-		return tang
+		return minkowski_ambient + minkowski_dot(hyperboloid_point, minkowski_ambient) * hyperboloid_point
    
 	def exponential_mapping( self, p, x ):
 
@@ -203,7 +203,7 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		# z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
 		# exp_map = tf.cosh(clipped_norm_x) * p + tf.sinh(clipped_norm_x) * z
 		#####################################################
-		# exp_map = adjust_to_hyperboloid(exp_map) # account for floating point imprecision
+		exp_map = adjust_to_hyperboloid(exp_map) # account for floating point imprecision
 
 		return exp_map
 
@@ -229,17 +229,11 @@ def parse_args():
 	'''
 	parser = argparse.ArgumentParser(description="HEAT algorithm for feature learning on complex networks")
 
-	# parser.add_argument("--data-directory", dest="data_directory", type=str, default="/data/",
-	# 	help="The directory containing data files (default is '/data/').")
-
-	# parser.add_argument("--dataset", dest="dataset", type=str, default="cora_ml",
-	# 	help="The name of dataset (to be used when saving")
-
-	parser.add_argument("--edgelist", dest="edgelist", type=str, default="datasets/cora_ml/edgelist.tsv",
+	parser.add_argument("--edgelist", dest="edgelist", type=str, default=None,#default="datasets/cora_ml/edgelist.tsv",
 		help="edgelist to load.")
-	parser.add_argument("--features", dest="features", type=str, default="datasets/cora_ml/feats.csv",
+	parser.add_argument("--features", dest="features", type=str, default=None,#default="datasets/cora_ml/feats.csv",
 		help="features to load.")
-	parser.add_argument("--labels", dest="labels", type=str, default="datasets/cora_ml/labels.csv",
+	parser.add_argument("--labels", dest="labels", type=str, default=None,#default="datasets/cora_ml/labels.csv",
 		help="path to labels")
 
 
@@ -250,8 +244,8 @@ def parse_args():
 
 	parser.add_argument("-e", "--num_epochs", dest="num_epochs", type=int, default=5,
 		help="The number of epochs to train for (default is 5).")
-	parser.add_argument("-b", "--batch_size", dest="batch_size", type=int, default=32, 
-		help="Batch size for training (default is 32).")
+	parser.add_argument("-b", "--batch_size", dest="batch_size", type=int, default=50, 
+		help="Batch size for training (default is 50).")
 	parser.add_argument("--nneg", dest="num_negative_samples", type=int, default=10, 
 		help="Number of negative samples for training (default is 10).")
 	parser.add_argument("--context-size", dest="context_size", type=int, default=3,
@@ -410,7 +404,7 @@ def main():
 	embedding = model.get_weights()[-1]
 	print ("Training complete, saving embedding to {}".format(args.embedding_filename))
 
-	embedding_df = pd.DataFrame(embedding, index=[graph.node[n]["original_name"] for n in graph.nodes()])
+	embedding_df = pd.DataFrame(embedding, index=sorted(graph.nodes()))
 	embedding_df.to_csv(args.embedding_filename)
 
 	if args.visualise:

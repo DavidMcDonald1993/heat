@@ -1,7 +1,4 @@
-import numpy as np
-
 import tensorflow as tf 
-from tensorflow.python.framework import ops
 import keras.backend as K
 
 def minkowski_dot(x, y):
@@ -12,11 +9,11 @@ def hyperbolic_softmax_loss(sigma=1.):
 
     def loss(y_true, y_pred, sigma=sigma):
 
-        u_emb = y_pred[:,0]
-        samples_emb = y_pred[:,1:]
+        source_node_embedding = y_pred[:,0]
+        target_nodes_embedding = y_pred[:,1:]
         
-        inner_uv = minkowski_dot(u_emb, samples_emb) 
-        inner_uv = -inner_uv - 1. + + 1e-7
+        inner_uv = minkowski_dot(source_node_embedding, target_nodes_embedding) 
+        inner_uv = -inner_uv - 1. + 1e-7
         inner_uv = K.maximum(inner_uv, K.epsilon())
 
         d_uv = tf.acosh(1. + inner_uv) 

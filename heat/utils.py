@@ -5,15 +5,18 @@ import fcntl
 import functools
 import numpy as np
 import networkx as nx
-from node2vec_sampling import Graph 
 
 import random
 
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import StandardScaler
 
 import pandas as pd
 
 import pickle as pkl
+
+from .node2vec_sampling import Graph 
+
 
 def load_data(args):
 
@@ -21,43 +24,50 @@ def load_data(args):
 	features_filename = args.features
 	labels_filename = args.labels
 
-	assert not edgelist_filename == "none", "you must specify and edgelist file"
+	# assert not edgelist_filename == "none", "you must specify and edgelist file"
 
-	graph = nx.read_edgelist(edgelist_filename, delimiter="\t", nodetype=int,
+	graph = nx.read_weighted_edgelist(edgelist_filename, delimiter="\t", nodetype=int,
 		create_using=nx.DiGraph() if args.directed else nx.Graph())
 
-	if not features_filename == "none":
+	# remove self loops as they slow down random walk
+	graph.remove_edges_from(graph.selfloop_edges())
+
+	if features_filename is not None:
 
 		if features_filename.endswith(".csv"):
 			features = pd.read_csv(features_filename, index_col=0, sep=",")
-			features = features.reindex(graph.nodes()).values
-			features = StandardScaler().fit_transform(features)
+			features = features.reindex(sorted(graph.nodes())).values
+			features = StandardScaler().fit_transform(features) # input features are standard scaled
 		else:
 			raise Exception
 
 	else: 
 		features = None
 
-	if not labels_filename == "none":
+	if labels_filename is not None:
 
 		if labels_filename.endswith(".csv"):
 			labels = pd.read_csv(labels_filename, index_col=0, sep=",")
-			labels = labels.reindex(graph.nodes()).values.flatten()
+			labels = labels.reindex(sorted(graph.nodes())).values.flatten()
 			assert len(labels.shape) == 1
-		if labels_filename.endswith(".pkl"):
+		elif labels_filename.endswith(".pkl"):
 			with open(labels_filename, "rb") as f:
 				labels = pkl.load(f)
-			label_map = {label: i for i, label in enumerate(set(labels.values()))}
-			labels = np.array([label_map[labels[n]] for n in graph.nodes()])
+			labels = np.array([labels[n] for n in sorted(graph.nodes())], dtype=np.int)
 		else:
 			raise Exception
 
 	else:
 		labels = None
 
-	graph = nx.convert_node_labels_to_integers(graph, label_attribute="original_name")
+	# graph = nx.convert_node_labels_to_integers(graph, label_attribute="original_name", ordering="sorted")
 
 	return graph, features, labels
+
+def load_embedding(embedding_filename):
+	assert embedding_filename.endswith(".csv")
+	embedding_df = pd.read_csv(embedding_filename, index_col=0)
+	return embedding_df
 
 def hyperboloid_to_poincare_ball(X):
 	return X[:,:-1] / (1 + X[:,-1,None])
@@ -159,24 +169,6 @@ def create_feature_graph(features, args):
 
 	return feature_graph
 
-def split_edges(edges, non_edges, args, val_split=0.05, test_split=0.1, neg_mul=1):
-	
-	num_val_edges = int(np.ceil(len(edges) * val_split))
-	num_test_edges = int(np.ceil(len(edges) * test_split))
-
-	random.seed(args.seed)
-	random.shuffle(edges)
-	random.shuffle(non_edges)
-
-	val_edges = edges[:num_val_edges]
-	test_edges = edges[num_val_edges:num_val_edges+num_test_edges]
-	train_edges = edges[num_val_edges+num_test_edges:]
-
-	val_non_edges = non_edges[:num_val_edges*neg_mul]
-	test_non_edges = non_edges[num_val_edges*neg_mul:num_val_edges*neg_mul+num_test_edges*neg_mul]
-
-	return train_edges, (val_edges, val_non_edges), (test_edges, test_non_edges)
-
 def determine_positive_and_negative_samples(nodes, walks, context_size, directed=False):
 
 	print ("determining positive and negative samples")
@@ -211,11 +203,13 @@ def determine_positive_and_negative_samples(nodes, walks, context_size, directed
 
 
 		if num_walk % 1000 == 0:  
-			print ("processed walk {:05d}/{}".format(num_walk, len(walks)))
+			print ("processed walk {:04d}/{}".format(num_walk, len(walks)))
 
 	negative_samples = {n: np.array(sorted(nodes.difference(all_positive_samples[n]))) for n in sorted(nodes)}
+	# negative_samples = {n: np.array(sorted(nodes)) for n in sorted(nodes)}
 	for u, neg_samples in negative_samples.items():
 		assert len(neg_samples) > 0, "node {} does not have any negative samples".format(u)
+		print ("node {} has {} negative samples".format(u, len(neg_samples)))
 
 	print ("DETERMINED POSITIVE AND NEGATIVE SAMPLES")
 	print ("found {} positive sample pairs".format(len(positive_samples)))

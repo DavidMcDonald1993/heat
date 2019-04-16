@@ -16,9 +16,9 @@ from sklearn.utils.fixes import signature
 import keras.backend as K
 from keras.callbacks import Callback
 
-from utils import convert_edgelist_to_dict
-from metrics import evaluate_rank_and_MAP, evaluate_rank_and_MAP_fb, evaluate_classification, evaluate_direction
-from visualise import draw_graph
+from .utils import convert_edgelist_to_dict
+from .metrics import evaluate_rank_and_MAP, evaluate_rank_and_MAP_fb, evaluate_classification, evaluate_direction
+from .visualise import draw_graph
 
 def gans_to_hyperboloid_np(x):
 	t = np.sqrt(1. + np.sum(np.square(x), axis=-1, keepdims=True))
