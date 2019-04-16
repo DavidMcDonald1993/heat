@@ -3,7 +3,7 @@
 heat=/rds/projects/2018/hesz01/heat/main.py
 
 hrs=10
-mem=3
+mem=5G
 
 # nc experiments
 for dataset in cora_ml citeseer ppi
@@ -36,7 +36,7 @@ do
 				slurm_options=$(echo \
 				--job-name=performEmbeddingsNC-${dataset}-${dim}-${seed}-0.${alpha}\
 				--time=${hrs}:00:00 \
-				--mem=${mem}G \
+				--mem=${mem} \
 				--output=performEmbeddingsNC-${dataset}-${dim}-${seed}-0.${alpha}.out \
 				--error=performEmbeddingsNC-${dataset}-${dim}-${seed}-0.${alpha}.err
 				)
@@ -50,7 +50,7 @@ do
 			slurm_options=$(echo \
 			--job-name=performEmbeddingsNC-${dataset}-${dim}-${seed}-1.0\
 			--time=${hrs}:00:00 \
-			--mem=${mem}G \
+			--mem=${mem} \
 			--output=performEmbeddingsNC-${dataset}-${dim}-${seed}-1.0.out \
 			--error=performEmbeddingsNC-${dataset}-${dim}-${seed}-1.0.err
 			)
@@ -95,7 +95,7 @@ do
 				slurm_options=$(echo \
 				--job-name=performEmbeddingsLP-${dataset}-${dim}-${seed}-0.${alpha}\
 				--time=${hrs}:00:00 \
-				--mem=${mem}G \
+				--mem=${mem} \
 				--output=performEmbeddingsLP-${dataset}-${dim}-${seed}-0.${alpha}.out \
 				--error=performEmbeddingsLP-${dataset}-${dim}-${seed}-0.${alpha}.err
 				)
@@ -108,7 +108,7 @@ do
 			slurm_options=$(echo \
 			--job-name=performEmbeddingsLP-${dataset}-${dim}-${seed}-1.0\
 			--time=${hrs}:00:00 \
-			--mem=${mem}G \
+			--mem=${mem} \
 			--output=performEmbeddingsLP-${dataset}-${dim}-${seed}-1.0.out \
 			--error=performEmbeddingsLP-${dataset}-${dim}-${seed}-1.0.err
 			)
