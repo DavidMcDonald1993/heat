@@ -15,7 +15,7 @@ do
 
 			data_dir=datasets/${dataset}
 			edgelist=${data_dir}/edgelist.tsv
-			features=${data_dir}/features.csv
+			features=${data_dir}/feats.csv
 			labels=${data_dir}/labels.csv
 			embedding_dir=embeddings/${dataset}/nc_experiment
 			walks_dir=walks/${dataset}/nc_experiment
@@ -73,10 +73,10 @@ do
 			data_dir=datasets/${dataset}
 			training_dir=$(printf "edgelists/${dataset}/seed=%03d/training_edges" ${seed})
 			edgelist=${training_dir}/edgelist.tsv
-			features=${data_dir}/features.csv
+			features=${data_dir}/feats.csv
 			labels=${data_dir}/labels.csv
-			embedding_dir=embeddings/${dataset}/nc_experiment
-			walks_dir=walks/${dataset}/nc_experiment
+			embedding_dir=embeddings/${dataset}/lp_experiment
+			walks_dir=walks/${dataset}/lp_experiment
 
 			modules=$(echo \
 			module purge\; \
