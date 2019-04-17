@@ -41,9 +41,11 @@ do
 				--error=performEmbeddingsNC-${dataset}-${dim}-${seed}-0.${alpha}.err
 				)
 
-
-				echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha}
-				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha})
+				if [ ! -f $(printf "${embedding_dir}/alpha=0.${alpha}/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
+				then
+					echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha}
+					sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha})
+				fi
 
 			done
 
@@ -55,8 +57,11 @@ do
 			--error=performEmbeddingsNC-${dataset}-${dim}-${seed}-1.0.err
 			)
 
-			echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0'
-			sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0')
+			if [ ! -f $(printf "${embedding_dir}/alpha=1.0/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
+			then
+				echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0'
+				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0')
+			fi
 		done
 	done
 done
@@ -99,8 +104,11 @@ do
 				--error=performEmbeddingsLP-${dataset}-${dim}-${seed}-0.${alpha}.err
 				)
 
-				echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha}
-				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha})
+				if [ ! -f $(printf "${embedding_dir}/alpha=0.${alpha}/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
+				then
+					echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha}
+					sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha})
+				fi
 
 			done
 
@@ -112,8 +120,11 @@ do
 			--error=performEmbeddingsLP-${dataset}-${dim}-${seed}-1.0.err
 			)
 
-			echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0'
-			sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0')
+			if [ ! -f $(printf "${embedding_dir}/alpha=1.0/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
+			then
+				echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0'
+				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0')
+			fi
 		done
 	done
 done
