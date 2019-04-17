@@ -43,7 +43,7 @@ do
 
 
 				echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha}
-				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha '${alpha})
+				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha})
 
 			done
 
@@ -60,7 +60,6 @@ do
 		done
 	done
 done
-
 
 # lp experiments
 for dataset in cora_ml citeseer ppi
@@ -101,7 +100,7 @@ do
 				)
 
 				echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha}
-				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha '${alpha})
+				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha})
 
 			done
 
