@@ -3,7 +3,7 @@
 heat=/rds/projects/2018/hesz01/heat/main.py
 
 hrs=10
-mem=5G
+mem=10G
 
 # nc experiments
 for dataset in cora_ml citeseer ppi
