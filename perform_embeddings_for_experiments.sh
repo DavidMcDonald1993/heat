@@ -57,7 +57,7 @@ do
 			--error=performEmbeddingsNC-${dataset}-${dim}-${seed}-1.0.err
 			)
 
-			if [ ! -f $(printf "${embedding_dir}/alpha=1.0/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
+			if [ ! -f $(printf "${embedding_dir}/alpha=1.00/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
 			then
 				echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0'
 				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0')
@@ -120,7 +120,7 @@ do
 			--error=performEmbeddingsLP-${dataset}-${dim}-${seed}-1.0.err
 			)
 
-			if [ ! -f $(printf "${embedding_dir}/alpha=1.0/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
+			if [ ! -f $(printf "${embedding_dir}/alpha=1.00/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
 			then
 				echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0'
 				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0')
