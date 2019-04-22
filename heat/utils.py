@@ -24,8 +24,6 @@ def load_data(args):
 	features_filename = args.features
 	labels_filename = args.labels
 
-	# assert not edgelist_filename == "none", "you must specify and edgelist file"
-
 	graph = nx.read_weighted_edgelist(edgelist_filename, delimiter="\t", nodetype=int,
 		create_using=nx.DiGraph() if args.directed else nx.Graph())
 
@@ -76,6 +74,12 @@ def hyperboloid_to_poincare_ball(X):
 
 def hyperboloid_to_klein(X):
 	return X[:,:-1] / X[:,-1,None]
+
+def poincare_ball_to_hyperboloid(X):
+	x = 2 * X
+	t = 1. + np.sum(np.square(X), axis=-1, keepdims=True)
+	x = np.concatenate([x, t], axis=-1)
+	return 1 / (1. - np.sum(np.square(X), axis=-1, keepdims=True)) * x
 
 def alias_setup(probs):
 	'''

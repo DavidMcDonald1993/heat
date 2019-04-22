@@ -25,7 +25,7 @@ do
 			)
 
 			cmd_nc=$(echo python evaluate_nc.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
-			--seed ${seed})
+			--seed ${seed} --poincare)
 			cmd_recon=$(echo python evaluate_reconstruction.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
 			--seed ${seed} --poincare)
 				

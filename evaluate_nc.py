@@ -7,7 +7,7 @@ from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import f1_score
 
-from heat.utils import load_data, hyperboloid_to_klein, load_embedding
+from heat.utils import load_data, hyperboloid_to_klein, load_embedding, poincare_ball_to_hyperboloid
 
 import functools
 import fcntl
@@ -25,6 +25,9 @@ def evaluate_node_classification(klein_embedding, labels,
 	
 	model = LogisticRegressionCV()
 	split = StratifiedShuffleSplit
+
+	if labels.shape[1] == 1:
+		labels = labels.flatten()
 
 	if len(labels.shape) > 1: # multilabel classification
 		model = OneVsRestClassifier(model)
@@ -122,6 +125,8 @@ def parse_args():
 
 	parser.add_argument("--seed", type=int, default=0)
 
+	parser.add_argument("--poincare", action="store_true")
+
 	return parser.parse_args()
 
 def main():
@@ -131,15 +136,18 @@ def main():
 	graph, features, node_labels = load_data(args)
 	print ("Loaded dataset")
 
-	hyperboloid_embedding_df = load_embedding(args.embedding_filename)
-	hyperboloid_embedding = hyperboloid_embedding_df.values
+	embedding_df = load_embedding(args.embedding_filename)
+	embedding = embedding_df.values
 
-	klein_embedding = hyperboloid_to_klein(hyperboloid_embedding)
+	if args.poincare:
+		embedding = poincare_ball_to_hyperboloid(embedding)
+	klein_embedding = hyperboloid_to_klein(embedding)
 
 	label_percentages, f1_micros, f1_macros = evaluate_node_classification(klein_embedding, node_labels)
 
 	test_results = {}
 	for label_percentage, f1_micro, f1_macro in zip(label_percentages, f1_micros, f1_macros):
+		print ("{:.2f}".format(label_percentage), "micro = {:.2f}".format(f1_micro), "macro = {:.2f}".format(f1_macro) )
 		test_results.update({"{:.2f}_micro".format(label_percentage): f1_micro})
 		test_results.update({"{:.2f}_macro".format(label_percentage): f1_macro})
 
