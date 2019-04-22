@@ -168,7 +168,7 @@ def main():
 
 	print ("saving test results to {}".format(test_results_filename))
 
-	threadsafe_save_test_results(test_results_lock_filename, test_results_filename, seed, data=test_results )
+	threadsafe_save_test_results(test_results_lock_filename, test_results_filename, args.seed, data=test_results )
 
 	print ("done")
 
