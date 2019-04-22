@@ -17,13 +17,11 @@ do
 			edgelist=${data_dir}/edgelist.tsv
 			features=${data_dir}/features.csv
 			labels=${data_dir}/labels.csv
-			walks_dir=walks/${dataset}/nc_experiment
 
 			modules=$(echo \
 			module purge\; \
 			module load bluebear\; \
 			module load apps/python3/3.5.2\; \
-			module load apps/keras/2.0.8-python-3.5.2
 			)
 
 			cmd_nc=$(echo python evaluate_nc.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
@@ -45,9 +43,14 @@ do
 				--error=evaluateEmbeddingsNC-${dataset}-${dim}-${seed}-0.${alpha}.err
 				)
 
-				echo -e submitting eval_NC '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results}
-				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results})
-
+				if [ -f ${embedding} ]
+				then
+					echo -e submitting eval_NC '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results}
+					sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results})
+				else
+					echo no embedding at ${embedding}
+				fi
+				
 				test_results=$(printf "test_results/${dataset}/reconstruction_experiment/alpha=0.${alpha}/dim=%03d/" ${dim})
 
 				slurm_options=$(echo \
@@ -58,9 +61,13 @@ do
 				--error=evaluateEmbeddingsRECON-${dataset}-${dim}-${seed}-0.${alpha}.err
 				)
 
-				echo -e submitting eval_RECON '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results}
-				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results})
-
+				if [ -f ${embedding} ]
+				then
+					echo -e submitting eval_RECON '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results}
+					sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results})
+				else
+					echo no embedding at ${embedding}
+				fi
 
 			done
 
@@ -75,8 +82,13 @@ do
 			--error=evaluateEmbeddingsNC-${dataset}-${dim}-${seed}-1.0.err
 			)
 
-			echo -e submitting eval_NC '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results}
-			sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results})
+			if [ -f ${embedding} ]
+			then
+				echo -e submitting eval_NC '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results}
+				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results})
+			else 
+				echo no embedding at ${embedding}
+			fi
 
 			test_results=$(printf "test_results/${dataset}/reconstruction_experiment/alpha=1.0/dim=%03d/" ${dim})
 
@@ -88,9 +100,13 @@ do
 			--error=evaluateEmbeddingsRECON-${dataset}-${dim}-${seed}-1.0.err
 			)
 
-			echo -e submitting eval_RECON '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results}
-			sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results})
-
+			if [ -f ${embedding} ]
+			then
+				echo -e submitting eval_RECON '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results}
+				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results})
+			else
+				echo no embedding at ${embedding}
+			fi
 		done
 	done
 done
@@ -110,7 +126,6 @@ do
 			module purge\; \
 			module load bluebear\; \
 			module load apps/python3/3.5.2\; \
-			module load apps/keras/2.0.8-python-3.5.2
 			)
 
 			cmd_lp=$(echo python evaluate_lp.py --output ${output} --seed ${seed} )
@@ -129,9 +144,13 @@ do
 				--error=evaluateEmbeddingsLP-${dataset}-${dim}-${seed}-0.${alpha}.err
 				)
 
-				echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results}
-				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results})
-
+				if [ -f ${embedding} ]
+				then
+					echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results}
+					sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results})
+				else
+					echo no embedding at ${embedding}
+				fi
 			done
 
 			
@@ -146,9 +165,13 @@ do
 			--error=evaluateEmbeddingsLP-${dataset}-${dim}-${seed}-1.0.err
 			)
 
-			echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results}
-			sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results})
-
+			if [ -f ${embedding} ]
+			then
+				echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results}
+				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results})
+			else
+				echo no embedding at ${embedding}
+			fi
 		done
 	done
 done
