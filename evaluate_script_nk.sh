@@ -30,7 +30,7 @@ do
 			--seed ${seed})
 				
 
-			embedding=$(printf "../poincare_embeddings/embeddings/${dataset}/dim=%02d/seed=%03d/nc_experiment/embedding.csv" ${dim} ${seed})
+			embedding=$(printf "../poincare-embeddings/embeddings/${dataset}/dim=%02d/seed=%03d/nc_experiment/embedding.csv" ${dim} ${seed})
 			test_results=$(printf "test_results/${dataset}/nc_experiment/nk/dim=%03d/" ${dim})
 
 			slurm_options=$(echo \
@@ -89,7 +89,7 @@ do
 
 			cmd_lp=$(echo python evaluate_lp.py --output ${output} --seed ${seed} )
 				
-			embedding=$(printf "../poincare_embeddings/embeddings/${dataset}/dim=%02d/seed=%03d/lp_experiment/embedding.csv" ${dim} ${seed})
+			embedding=$(printf "../poincare-embeddings/embeddings/${dataset}/dim=%02d/seed=%03d/lp_experiment/embedding.csv" ${dim} ${seed})
 			test_results=$(printf "test_results/${dataset}/lp_experiment/nk/dim=%03d/" ${dim})
 
 			slurm_options=$(echo \
