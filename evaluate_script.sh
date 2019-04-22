@@ -46,7 +46,7 @@ do
 				)
 
 				echo -e submitting eval_NC '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results}
-				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results}
+				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results})
 
 				test_results=$(printf "test_results/${dataset}/reconstruction_experiment/alpha=0.${alpha}/dim=%03d/" ${dim})
 
@@ -59,7 +59,7 @@ do
 				)
 
 				echo -e submitting eval_RECON '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results}
-				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results}
+				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results})
 
 
 			done
@@ -76,7 +76,7 @@ do
 			)
 
 			echo -e submitting eval_NC '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results}
-			sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results}
+			sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_nc}' --embedding '${embedding}' --test-results-dir '${test_results})
 
 			test_results=$(printf "test_results/${dataset}/reconstruction_experiment/alpha=1.0/dim=%03d/" ${dim})
 
@@ -89,7 +89,7 @@ do
 			)
 
 			echo -e submitting eval_RECON '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results}
-			sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results}
+			sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_recon}' --embedding '${embedding}' --test-results-dir '${test_results})
 
 		done
 	done
@@ -130,7 +130,7 @@ do
 				)
 
 				echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results}
-				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results}
+				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results})
 
 			done
 
@@ -147,7 +147,7 @@ do
 			)
 
 			echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results}
-			sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results}
+			sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd_lp}' --embedding '${embedding}' --test-results-dir '${test_results})
 
 		done
 	done
