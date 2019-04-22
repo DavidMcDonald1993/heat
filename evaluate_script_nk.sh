@@ -27,7 +27,7 @@ do
 			cmd_nc=$(echo python evaluate_nc.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
 			--seed ${seed})
 			cmd_recon=$(echo python evaluate_reconstruction.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
-			--seed ${seed})
+			--seed ${seed} --poincare)
 				
 
 			embedding=$(printf "../poincare-embeddings/embeddings/${dataset}/dim=%02d/seed=%03d/nc_experiment/embedding.csv" ${dim} ${seed})
@@ -87,7 +87,7 @@ do
 			module load apps/python3/3.5.2\; \
 			)
 
-			cmd_lp=$(echo python evaluate_lp.py --output ${output} --seed ${seed} )
+			cmd_lp=$(echo python evaluate_lp.py --output ${output} --seed ${seed} --poincare)
 				
 			embedding=$(printf "../poincare-embeddings/embeddings/${dataset}/dim=%02d/seed=%03d/lp_experiment/embedding.csv" ${dim} ${seed})
 			test_results=$(printf "test_results/${dataset}/lp_experiment/nk/dim=%03d/" ${dim})

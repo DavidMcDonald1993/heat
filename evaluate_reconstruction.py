@@ -11,6 +11,8 @@ import argparse
 from heat.utils import load_embedding, load_data
 
 from sklearn.metrics import average_precision_score, roc_auc_score
+from sklearn.metrics.pairwise import euclidean_distances
+
 import functools
 import fcntl
 
@@ -26,6 +28,13 @@ def hyperbolic_distance(u, v):
 	mink_dp = minkowki_dot(u, v)
 	mink_dp = np.minimum(mink_dp, -(1 + 1e-32))
 	return np.arccosh(-mink_dp)
+
+def hyperbolic_distance_poincare(X):
+	norm_X = np.linalg.norm(X, keepdims=True, axis=-1)
+	norm_X = np.minimum(norm_X, np.nextafter(1,0, ))
+	uu = euclidean_distances(X) ** 2
+	dd = (1 - norm_X**2) * (1 - norm_X**2).T
+	return np.arccosh(1 + 2 * uu / dd)
 
 def evaluate_rank_and_MAP(dists, edgelist, non_edgelist):
 	assert not isinstance(edgelist, dict)
@@ -128,6 +137,9 @@ def parse_args():
 
 	parser.add_argument("--seed", type=int, default=0)
 
+	parser.add_argument("--poincare", action="store_true")
+
+
 	return parser.parse_args()
 
 
@@ -138,13 +150,16 @@ def main():
 	graph, features, node_labels = load_data(args)
 	print ("Loaded dataset")
 
-	hyperboloid_embedding_df = load_embedding(args.embedding_filename)
-	hyperboloid_embedding = hyperboloid_embedding_df.values
+	embedding_df = load_embedding(args.embedding_filename)
+	embedding = embedding_df.values
 	# row 0 is embedding for node 0
 	# row 1 is embedding for node 1 etc...
-	hyperboloid_embedding = hyperboloid_embedding_df.values
+	embedding = embedding_df.values
 
-	dists = hyperbolic_distance(hyperboloid_embedding, hyperboloid_embedding)
+	if args.poincare:
+		dists = hyperbolic_distance_poincare(embedding)
+	else:
+		dists = hyperbolic_distance(hyperboloid_embedding, hyperboloid_embedding)
 
 	test_edges = list(graph.edges())
 	test_non_edges = list(nx.non_edges(graph))

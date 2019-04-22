@@ -71,7 +71,7 @@ do
 
 			done
 
-			embedding=$(printf "embeddings/${dataset}/nc_experiment/alpha=1.0/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim})
+			embedding=$(printf "embeddings/${dataset}/nc_experiment/alpha=1.00/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim})
 			test_results=$(printf "test_results/${dataset}/nc_experiment/alpha=1.0/dim=%03d/" ${dim})
 
 			slurm_options=$(echo \
@@ -154,7 +154,7 @@ do
 			done
 
 			
-			embedding=$(printf "embeddings/${dataset}/lp_experiment/alpha=1.0/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim})
+			embedding=$(printf "embeddings/${dataset}/lp_experiment/alpha=1.00/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim})
 			test_results=$(printf "test_results/${dataset}/lp_experiment/alpha=1.0/dim=%03d/" ${dim})
 
 			slurm_options=$(echo \

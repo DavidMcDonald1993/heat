@@ -164,20 +164,20 @@ def draw_graph(edges, embedding, labels, path, s=25):
     
     draw_geodesic(a, b, c, ax)
 
-    if labels is not None and len(labels.shape) == 2:
-        core_nodes = labels[:,1].astype(np.bool)
-        ax.scatter(embedding[core_nodes,0], embedding[core_nodes,1], 
-            c=["r" if l==0 else "g" if l==1 else "b" for l in labels[core_nodes,0]],
-            marker="o",
-            s=s, zorder=2)
-        ax.scatter(embedding[~core_nodes,0], embedding[~core_nodes,1], 
-            c=["r" if l==0 else "g" if l==1 else "b" for l in labels[~core_nodes,0]],
-            marker="X",
-            s=s, zorder=2)
-    else:
-        ax.scatter(embedding[:,0], embedding[:,1], 
-            c=labels,
-            s=s, zorder=2)
+    # if labels is not None and len(labels.shape) == 2:
+    #     core_nodes = labels[:,1].astype(np.bool)
+    #     ax.scatter(embedding[core_nodes,0], embedding[core_nodes,1], 
+    #         c=["r" if l==0 else "g" if l==1 else "b" for l in labels[core_nodes,0]],
+    #         marker="o",
+    #         s=s, zorder=2)
+    #     ax.scatter(embedding[~core_nodes,0], embedding[~core_nodes,1], 
+    #         c=["r" if l==0 else "g" if l==1 else "b" for l in labels[~core_nodes,0]],
+    #         marker="X",
+    #         s=s, zorder=2)
+    # else:
+    ax.scatter(embedding[:,0], embedding[:,1], 
+        c=labels[:,0] if labels is not None else None,
+        s=s, zorder=2)
 
     plt.savefig(path)
     plt.close()

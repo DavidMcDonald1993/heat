@@ -20,7 +20,7 @@ from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from keras.layers import Input, Layer, Dense, Embedding
 from keras.models import Model
 from keras import backend as K
-# from keras.callbacks import Callback, TerminateOnNaN, TensorBoard, ModelCheckpoint, CSVLogger, EarlyStopping
+from keras.callbacks import Callback, TerminateOnNaN, TensorBoard, ModelCheckpoint, CSVLogger, EarlyStopping
 
 import tensorflow as tf
 from tensorflow.python.framework import ops
@@ -358,7 +358,7 @@ def main():
 		target_tensors=[tf.placeholder(dtype=np.int64)])
 	model.summary()
 
-	callbacks = []			
+	callbacks = [EarlyStopping(monitor="loss", patience=5, verbose=True)]			
 
 	walks = perform_walks(graph, features, args)
 

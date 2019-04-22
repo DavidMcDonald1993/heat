@@ -48,8 +48,10 @@ def load_data(args):
 
 		if labels_filename.endswith(".csv"):
 			labels = pd.read_csv(labels_filename, index_col=0, sep=",")
-			labels = labels.reindex(sorted(graph.nodes())).values.flatten()
-			assert len(labels.shape) == 1
+			labels = labels.reindex(sorted(graph.nodes())).values#.flatten()
+			assert len(labels.shape) == 2
+			# if labels.shape[1] == 1:
+			# 	labels = labels.flatten()
 		elif labels_filename.endswith(".pkl"):
 			with open(labels_filename, "rb") as f:
 				labels = pkl.load(f)
