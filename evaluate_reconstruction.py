@@ -111,7 +111,7 @@ def parse_args():
 
 	parser = argparse.ArgumentParser(description='Load Hyperboloid Embeddings and evaluate reconstruction')
 	
-		parser.add_argument("--edgelist", dest="edgelist", type=str, default="datasets/cora_ml/edgelist.tsv",
+	parser.add_argument("--edgelist", dest="edgelist", type=str, default="datasets/cora_ml/edgelist.tsv",
 		help="edgelist to load.")
 	parser.add_argument("--features", dest="features", type=str, default="datasets/cora_ml/feats.csv",
 		help="features to load.")
