@@ -58,7 +58,7 @@ def evaluate_rank_and_MAP(dists, edgelist, non_edgelist):
 	ranks = ranks.mean()
 
 	print ("MEAN RANK =", ranks, "AP =", ap_score, 
-		"ROC AUC =", auc_score)
+		"AUROC =", auc_score)
 
 	return ranks, ap_score, auc_score
 
@@ -159,7 +159,7 @@ def main():
 	if args.poincare:
 		dists = hyperbolic_distance_poincare(embedding)
 	else:
-		dists = hyperbolic_distance(hyperboloid_embedding, hyperboloid_embedding)
+		dists = hyperbolic_distance(embedding, embedding)
 
 	test_edges = list(graph.edges())
 	test_non_edges = list(nx.non_edges(graph))

@@ -57,7 +57,7 @@ def evaluate_rank_and_MAP(dists, edgelist, non_edgelist):
 	ranks = ranks.mean()
 
 	print ("MEAN RANK =", ranks, "AP =", ap_score, 
-		"ROC AUC =", auc_score)
+		"AUROC =", auc_score)
 
 	return ranks, ap_score, auc_score
 
