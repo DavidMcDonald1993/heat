@@ -2,7 +2,7 @@
 
 heat=/rds/projects/2018/hesz01/heat/main.py
 
-hrs=1
+hrs=24
 mem=3
 
 # nc experiments
@@ -25,7 +25,7 @@ do
 			)
 
 			cmd_nc=$(echo python evaluate_nc.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
-			--seed ${seed} --poincare)
+			--seed ${seed} --poincare3)
 			cmd_recon=$(echo python evaluate_reconstruction.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
 			--seed ${seed} --poincare)
 				

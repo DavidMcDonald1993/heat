@@ -2,7 +2,7 @@
 
 heat=/rds/projects/2018/hesz01/heat/main.py
 
-hrs=1
+hrs=24
 mem=3
 
 # nc experiments
