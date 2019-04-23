@@ -24,7 +24,7 @@ def minkowki_dot(u, v):
 	euc_dp = u[:,:rank].dot(v[:,:rank].T)
 	return euc_dp - u[:,rank, None] * v[:,rank]
 
-def hyperbolic_distance(u, v):
+def hyperbolic_distance_hyperboloid(u, v):
 	mink_dp = minkowki_dot(u, v)
 	mink_dp = np.maximum(-1 - mink_dp, 1e-15)
 	return np.arccosh(1 + mink_dp)
@@ -159,7 +159,7 @@ def main():
 	if args.poincare:
 		dists = hyperbolic_distance_poincare(embedding)
 	else:
-		dists = hyperbolic_distance(embedding, embedding)
+		dists = hyperbolic_distance_hyperboloid(embedding, embedding)
 
 	test_edges = list(graph.edges())
 	test_non_edges = list(nx.non_edges(graph))

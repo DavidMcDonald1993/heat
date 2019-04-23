@@ -23,7 +23,7 @@ def minkowki_dot(u, v):
 	euc_dp = u[:,:rank].dot(v[:,:rank].T)
 	return euc_dp - u[:,rank, None] * v[:,rank]
 
-def hyperbolic_distance(u, v):
+def hyperbolic_distance_hyperboloid(u, v):
 	mink_dp = minkowki_dot(u, v)
 	mink_dp = np.maximum(-1 - mink_dp, 1e-15)
 	return np.arccosh(1 + mink_dp)
