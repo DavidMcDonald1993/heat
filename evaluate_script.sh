@@ -72,14 +72,14 @@ do
 			done
 
 			embedding=$(printf "embeddings/${dataset}/nc_experiment/alpha=1.00/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim})
-			test_results=$(printf "test_results/${dataset}/nc_experiment/alpha=1.0/dim=%03d/" ${dim})
+			test_results=$(printf "test_results/${dataset}/nc_experiment/alpha=1.00/dim=%03d/" ${dim})
 
 			slurm_options=$(echo \
-			--job-name=evaluateEmbeddingsNC-${dataset}-${dim}-${seed}-1.0\
+			--job-name=evaluateEmbeddingsNC-${dataset}-${dim}-${seed}-1.00\
 			--time=${hrs}:00:00 \
 			--mem=${mem}G \
-			--output=evaluateEmbeddingsNC-${dataset}-${dim}-${seed}-1.0.out \
-			--error=evaluateEmbeddingsNC-${dataset}-${dim}-${seed}-1.0.err
+			--output=evaluateEmbeddingsNC-${dataset}-${dim}-${seed}-1.00.out \
+			--error=evaluateEmbeddingsNC-${dataset}-${dim}-${seed}-1.00.err
 			)
 
 			if [ -f ${embedding} ]
@@ -90,14 +90,14 @@ do
 				echo no embedding at ${embedding}
 			fi
 
-			test_results=$(printf "test_results/${dataset}/reconstruction_experiment/alpha=1.0/dim=%03d/" ${dim})
+			test_results=$(printf "test_results/${dataset}/reconstruction_experiment/alpha=1.00/dim=%03d/" ${dim})
 
 			slurm_options=$(echo \
-			--job-name=evaluateEmbeddingsRECON-${dataset}-${dim}-${seed}-1.0\
+			--job-name=evaluateEmbeddingsRECON-${dataset}-${dim}-${seed}-1.00\
 			--time=${hrs}:00:00 \
 			--mem=${mem}G \
-			--output=evaluateEmbeddingsRECON-${dataset}-${dim}-${seed}-1.0.out \
-			--error=evaluateEmbeddingsRECON-${dataset}-${dim}-${seed}-1.0.err
+			--output=evaluateEmbeddingsRECON-${dataset}-${dim}-${seed}-1.00.out \
+			--error=evaluateEmbeddingsRECON-${dataset}-${dim}-${seed}-1.00.err
 			)
 
 			if [ -f ${embedding} ]
@@ -155,14 +155,14 @@ do
 
 			
 			embedding=$(printf "embeddings/${dataset}/lp_experiment/alpha=1.00/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim})
-			test_results=$(printf "test_results/${dataset}/lp_experiment/alpha=1.0/dim=%03d/" ${dim})
+			test_results=$(printf "test_results/${dataset}/lp_experiment/alpha=1.00/dim=%03d/" ${dim})
 
 			slurm_options=$(echo \
-			--job-name=evaluateEmbeddingsLP-${dataset}-${dim}-${seed}-1.0\
+			--job-name=evaluateEmbeddingsLP-${dataset}-${dim}-${seed}-1.00\
 			--time=${hrs}:00:00 \
 			--mem=${mem}G \
-			--output=evaluateEmbeddingsLP-${dataset}-${dim}-${seed}-1.0.out \
-			--error=evaluateEmbeddingsLP-${dataset}-${dim}-${seed}-1.0.err
+			--output=evaluateEmbeddingsLP-${dataset}-${dim}-${seed}-1.00.out \
+			--error=evaluateEmbeddingsLP-${dataset}-${dim}-${seed}-1.00.err
 			)
 
 			if [ -f ${embedding} ]
