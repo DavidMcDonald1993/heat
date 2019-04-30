@@ -9,7 +9,7 @@ mem=3
 for dataset in cora_ml citeseer ppi
 do
 	for dim in 5 10 25 50
-	dop	
+	do	
 		for seed in {0..29}
 		do
 
