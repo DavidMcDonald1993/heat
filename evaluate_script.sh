@@ -18,13 +18,14 @@ do
 			features=${data_dir}/feats.csv
 			labels=${data_dir}/labels.csv
 
-			modules=$(echo \
-			module purge\; \
-			module load bluebear\; \
-			module load apps/python3/3.5.2\; \
+			modules=$(echo -e \
+			module purge\n \
+			module load bluebear\n \
+			module load Python/3.6.3-iomkl-2018a\n \
+			pip install --user numpy pandas networkx scikit-learn scikit-multilearn 
 			)
 
-			cmd_nc=$(echo -e pip install --user scikit-multilearn\npython evaluate_nc.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
+			cmd_nc=$(echo python evaluate_nc.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
 			--seed ${seed})
 			cmd_recon=$(echo python evaluate_reconstruction.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
 			--seed ${seed})

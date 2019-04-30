@@ -6,7 +6,9 @@ Python3
 Numpy
 Scipy
 Scikit-learn
+Scikit-multilearn
 Keras
+
 
 ## How to use:
 TODO
