@@ -17,6 +17,8 @@ import pickle as pkl
 
 from .node2vec_sampling import Graph 
 
+from multiprocessing.pool import Pool 
+
 
 def load_data(args):
 
@@ -87,6 +89,9 @@ def alias_setup(probs):
 	Refer to https://hips.seas.harvard.edu/blog/2013/03/03/the-alias-method-efficient-sampling-with-many-discrete-outcomes/
 	for details
 	'''
+
+	n, probs = probs
+
 	K = len(probs)
 	q = np.zeros(K)
 	J = np.zeros(K, dtype=np.int)
@@ -111,7 +116,7 @@ def alias_setup(probs):
 		else:
 			larger.append(large)
 
-	return J, q
+	return n, (J, q)
 
 def alias_draw(J, q, size=1):
 	'''
@@ -141,15 +146,31 @@ def convert_edgelist_to_dict(edgelist, undirected=True, self_edges=False):
 
 	return edge_dict
 
-def build_training_samples(batch_positive_samples, negative_samples, num_negative_samples, alias_dict):
-	input_nodes = batch_positive_samples[:,0]
+def get_training_sample(samples, num_negative_samples, ):
+	positive_sample_pair, negative_samples, probs = samples
+	# u = positive_sample_pair[0]
+	negative_samples_ = negative_samples[alias_draw(probs[0], probs[1], num_negative_samples)]
+	# negative_samples_ = np.random.choice(negative_samples, size=num_negative_samples, replace=True, p=probs)
+	return np.append(positive_sample_pair, negative_samples_, )
 
-	batch_negative_samples = np.array([
-		negative_samples[u][alias_draw(alias_dict[u][0], alias_dict[u][1], num_negative_samples)]
-		for u in input_nodes
-	], dtype=np.int64)
-	batch_nodes = np.append(batch_positive_samples, batch_negative_samples, axis=1)
-	return batch_nodes
+def build_training_samples(positive_samples, negative_samples, num_negative_samples, alias_dict):
+	input_nodes = positive_samples[:,0]
+	print ("Building training samples")
+
+	# batch_negative_samples = np.array([
+	# 	negative_samples[u][alias_draw(alias_dict[u][0], alias_dict[u][1], num_negative_samples)]
+	# 	for u in input_nodes
+	# ], dtype=np.int64)
+	# batch_nodes = np.append(batch_positive_samples, batch_negative_samples, axis=1)
+	# return batch_nodes
+	with Pool(processes=None) as p:
+		training_samples = p.map(functools.partial(get_training_sample,
+			num_negative_samples=num_negative_samples,
+			),
+			zip(positive_samples,
+				(negative_samples[u] for u in input_nodes),
+				(alias_dict[u] for u in input_nodes)))
+	return np.array(training_samples)
 
 def create_second_order_topology_graph(topology_graph, args):
 
@@ -175,58 +196,83 @@ def create_feature_graph(features, args):
 
 	return feature_graph
 
-def determine_positive_and_negative_samples(nodes, walks, context_size, directed=False):
+def determine_positive_and_negative_samples(graph, features, args):
 
-	print ("determining positive and negative samples")
+	nodes = graph.nodes()
 
 	if not isinstance(nodes, set):
 		nodes = set(nodes)
+
+	if args.no_walks:
+
+		print ("using only edges as positive samples")
+
+		positive_samples = list(graph.edges())
+		positive_samples += [(v, u) for (u, v) in positive_samples]
+
+		all_positive_samples = {n: set(graph.neighbors(n)) for n in sorted(graph.nodes())}
+
+		# counts = np.ones(len(graph))
+		counts = np.array([graph.degree(n) for n in sorted(graph.nodes())])
+
+	else:
 	
-	all_positive_samples = {n: set() for n in sorted(nodes)}
-	# neighbourhood_samples = {n: set() for n in sorted(nodes)}
-	negative_samples = {n: set() for n in sorted(nodes)}
+		walks = perform_walks(graph, features, args)
 
-	positive_samples = []
+		print ("determining positive and negative samples using random walks")
 
-	counts = {n: 0. for n in sorted(nodes)}
+		context_size = args.context_size
+		directed = False
+		
+		all_positive_samples = {n: set() for n in sorted(nodes)}
+		negative_samples = {n: set() for n in sorted(nodes)}
 
-	for num_walk, walk in enumerate(walks):
-		for i in range(len(walk)):
-			u = walk[i]
-			counts[u] += 1	
-			for j in range(context_size):
-				if i+j+1 >= len(walk):
-					break
-				v = walk[i+j+1]
-				if u == v:
-					continue
-				if j < context_size: 
+		positive_samples = []
+
+		counts = {n: 0. for n in sorted(nodes)}
+
+		for num_walk, walk in enumerate(walks):
+			for i in range(len(walk)):
+				u = walk[i]
+				counts[u] += 1	
+				for j in range(context_size):
+					if i+j+1 >= len(walk):
+						break
+					v = walk[i+j+1]
+					if u == v:
+						continue
 					positive_samples.extend([(u, v)])
 					positive_samples.extend([(v, u)])
 
 					all_positive_samples[u].add(v)
 					all_positive_samples[v].add(u)
 
+			if num_walk % 1000 == 0:  
+				print ("processed walk {:04d}/{}".format(num_walk, len(walks)))
 
-		if num_walk % 1000 == 0:  
-			print ("processed walk {:04d}/{}".format(num_walk, len(walks)))
+		counts = np.array(list(counts.values()))
+		# counts = np.array([graph.degree(n) for n in sorted(graph.nodes())])
+		
 
 	negative_samples = {n: np.array(sorted(nodes.difference(all_positive_samples[n]))) for n in sorted(nodes)}
 	# negative_samples = {n: np.array(sorted(nodes)) for n in sorted(nodes)}
 	for u, neg_samples in negative_samples.items():
 		assert len(neg_samples) > 0, "node {} does not have any negative samples".format(u)
-		print ("node {} has {} negative samples".format(u, len(neg_samples)))
+		# print ("node {} has {} negative samples".format(u, len(neg_samples)))
 
 	print ("DETERMINED POSITIVE AND NEGATIVE SAMPLES")
 	print ("found {} positive sample pairs".format(len(positive_samples)))
 
-	counts = np.array(list(counts.values())) ** 0.75
+	counts = counts ** 0.75
 	probs = counts #/ counts.sum()
 
 	prob_dict = {n: probs[negative_samples[n]] for n in sorted(nodes)}
 	prob_dict = {n: p / p.sum() for n, p in prob_dict.items()}
 
-	alias_dict = {n: alias_setup(p) for n, p in prob_dict.items()}
+	with Pool(processes=None) as p:
+		alias_dict = p.map(alias_setup, prob_dict.items())
+
+	alias_dict = {n: p for n, p in alias_dict}
 
 	print ("PREPROCESSED NEGATIVE SAMPLE PROBS")
 
@@ -269,8 +315,13 @@ def perform_walks(graph, features, args):
 		if args.alpha > 0:
 			assert features is not None
 
-		node2vec_graph = Graph(graph=graph, is_directed=False, p=args.p, q=args.q,
-			alpha=args.alpha, feature_sim=feature_sim, seed=args.seed)
+		node2vec_graph = Graph(graph=graph, 
+			is_directed=False,
+			p=args.p, 
+			q=args.q,
+			alpha=args.alpha, 
+			feature_sim=feature_sim, 
+			seed=args.seed)
 		node2vec_graph.preprocess_transition_probs()
 		walks = node2vec_graph.simulate_walks(num_walks=args.num_walks, walk_length=args.walk_length)
 		save_walks_to_file(walks, walk_file)
@@ -311,11 +362,9 @@ def threadsafe_fn(lock_filename, fn, *args, **kwargs ):
 
 def save_test_results(filename, seed, data, ):
 	d = pd.DataFrame(index=[seed], data=data)
-	# try:
 	if os.path.exists(filename):
 		test_df = pd.read_csv(filename, sep=",", index_col=0)
 		test_df = d.combine_first(test_df)
-	# except EmptyDataError:
 	else:
 		test_df = d
 	test_df.to_csv(filename, sep=",")

@@ -11,7 +11,6 @@ class TrainingDataGenerator(Sequence):
 	def __init__(self, positive_samples, negative_samples, alias_dict, args):
 		assert isinstance(positive_samples, list)
 		self.positive_samples = positive_samples
-		# self.neighbourhood_samples = neighbourhood_samples
 		self.negative_samples = negative_samples
 		self.alias_dict = alias_dict
 		self.batch_size = args.batch_size
@@ -53,7 +52,8 @@ class TrainingDataGenerator(Sequence):
 			positive_samples[batch_idx * batch_size : (batch_idx + 1) * batch_size], dtype=np.int64)
 		training_sample = self.get_training_sample(batch_positive_samples)
 		
-		target = np.zeros((training_sample.shape[0],  1))
+		target = np.zeros((training_sample.shape[0],  1, 1))
+		# target = np.zeros((training_sample.shape[0],  self.num_negative_samples + 1, 1))
 		
 		return training_sample, target
 

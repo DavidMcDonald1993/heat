@@ -7,6 +7,9 @@ import scipy as sp
 import networkx as nx
 import random
 
+import functools
+from multiprocessing.pool import Pool
+
 class Graph():
 	def __init__(self, graph, is_directed, p, q, alpha=0, feature_sim=None, seed=0):
 		self.graph = graph
@@ -18,7 +21,7 @@ class Graph():
 		np.random.seed(seed)
 		random.seed(seed)
 
-	def node2vec_walk(self, walk_length, start_node):
+	def node2vec_walk(self,  start_node, walk_length,):
 		'''
 		Simulate a random walk starting from start node.
 		'''
@@ -68,20 +71,39 @@ class Graph():
 		walks = []
 		nodes = list(graph.nodes())
 		i = 0
+
+		print ("PERFORMING WALKS")
+
+		# with Pool(processes=2) as p:
+		# 	nodes *= num_walks
+		# 	walks = p.map(functools.partial(self.node2vec_walk, walk_length=walk_length), nodes)
+
 		for walk_iter in range(num_walks):
 			random.shuffle(nodes)
 			for node in nodes:
-				walks.append(self.node2vec_walk(walk_length=walk_length, start_node=node))
+				walks.append(self.node2vec_walk(node, walk_length=walk_length, ))
 				if i % 1000 == 0:
-					print ("performed walk {:05d}/{}".format(i, num_walks*len(graph)))
+					print ("performed walk {:04d}/{}".format(i, num_walks*len(graph)))
 				i += 1
 
 		return walks
 
-	def get_alias_edge(self, src, dst):
+	def get_alias_node(self, node):
+
+		graph = self.graph
+
+		unnormalized_probs = [graph[node][nbr]['weight'] for nbr in sorted(graph.neighbors(node))]
+		norm_const = sum(unnormalized_probs)
+		normalized_probs =  [float(u_prob)/norm_const for u_prob in unnormalized_probs]
+
+		return node, alias_setup(normalized_probs)
+
+	def get_alias_edge(self, edge):
 		'''
 		Get the alias edge setup lists for a given edge.
 		'''
+		src, dst = edge
+
 		graph = self.graph
 		p = self.p
 		q = self.q
@@ -97,7 +119,7 @@ class Graph():
 		norm_const = sum(unnormalized_probs)
 		normalized_probs =  [float(u_prob)/norm_const for u_prob in unnormalized_probs]
 
-		return alias_setup(normalized_probs)
+		return edge, alias_setup(normalized_probs)
 
 
 	def preprocess_transition_probs(self):
@@ -110,33 +132,51 @@ class Graph():
 
 		alias_nodes = {}
 		i = 0
-		for node in graph.nodes():
-			unnormalized_probs = [graph[node][nbr]['weight'] for nbr in sorted(graph.neighbors(node))]
-			norm_const = sum(unnormalized_probs)
-			normalized_probs =  [float(u_prob)/norm_const for u_prob in unnormalized_probs]
 
-			alias_nodes[node] = alias_setup(normalized_probs)
-			if i % 1000 == 0:
-				print ("preprocessed node {:04d}/{}".format(i, len(graph)))
-			i += 1
+		print ("preprocessing nodes")
 
-		# triads = {}
+		with Pool(processes=None) as p:
+			alias_nodes = p.map(self.get_alias_node, graph.nodes())
+		alias_nodes = {node: alias_node for node, alias_node in alias_nodes}
+
+		# for node in graph.nodes():
+		# 	# unnormalized_probs = [graph[node][nbr]['weight'] for nbr in sorted(graph.neighbors(node))]
+		# 	# norm_const = sum(unnormalized_probs)
+		# 	# normalized_probs =  [float(u_prob)/norm_const for u_prob in unnormalized_probs]
+
+		# 	# alias_nodes[node] = alias_setup(normalized_probs)
+		# 	alias_nodes[node] = self.get_alias_node(node)
+
+		# 	if i % 1000 == 0:
+		# 		print ("preprocessed node {:04d}/{}".format(i, len(graph)))
+		# 	i += 1
+
 		print ("preprocessed all nodes")
 		self.alias_nodes = alias_nodes
 
 		alias_edges = {}
 
-		if is_directed:
-			for edge in graph.edges():
-				alias_edges[edge] = self.get_alias_edge(edge[0], edge[1])
-		else:
-			i = 0
-			for edge in graph.edges():
-				if i % 1000 == 0:
-					print ("preprocessed edge {:05d}/{}".format(i, 2*len(graph.edges())))
-				alias_edges[edge] = self.get_alias_edge(edge[0], edge[1])
-				alias_edges[(edge[1], edge[0])] = self.get_alias_edge(edge[1], edge[0])
-				i += 2
+		edges = list(graph.edges())
+		if not is_directed:
+			edges += [(v, u) for u, v in edges]
+
+		print ("preprocessing edges")
+
+		with Pool(processes=None) as p:
+			alias_edges = p.map(self.get_alias_edge, edges)
+		alias_edges = {edge: alias_edge for edge, alias_edge in alias_edges}
+
+		# if is_directed:
+		# 	for edge in graph.edges():
+		# 		alias_edges[edge] = self.get_alias_edge(edge[0], edge[1])
+		# else:
+		# 	i = 0
+		# 	for edge in graph.edges():
+		# 		if i % 1000 == 0:
+		# 			print ("preprocessed edge {:05d}/{}".format(i, 2*len(graph.edges())))
+		# 		alias_edges[edge] = self.get_alias_edge(edge[0], edge[1])
+		# 		alias_edges[(edge[1], edge[0])] = self.get_alias_edge(edge[1], edge[0])
+		# 		i += 2
 
 		print ("preprocessed all edges")
 

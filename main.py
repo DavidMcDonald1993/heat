@@ -65,17 +65,17 @@ def minkowski_dot(x, y):
     axes = len(x.shape) - 1, len(y.shape) -1
     return K.batch_dot(x[...,:-1], y[...,:-1], axes=axes) - K.batch_dot(x[...,-1:], y[...,-1:], axes=axes)
 
-def minkowski_dot_2d(x, y):
-	# axes = len(x.shape) - 1, len(y.shape) -1
-	return K.dot( x[...,:-1], K.transpose(y[...,:-1])) - K.dot(x[...,-1:], K.transpose(y[...,-1:]))
+# def minkowski_dot_2d(x, y):
+# 	# axes = len(x.shape) - 1, len(y.shape) -1
+# 	return K.dot( x[...,:-1], K.transpose(y[...,:-1])) - K.dot(x[...,-1:], K.transpose(y[...,-1:]))
 
-def hyperbolic_distance(x, y):
-	inner_uv = minkowski_dot_2d(x, y)
-	inner_uv = -inner_uv - 1. + 1e-7
-	# inner_uv = K.maximum(inner_uv, K.epsilon()) # clip to avoid nan
+# def hyperbolic_distance(x, y):
+# 	inner_uv = minkowski_dot_2d(x, y)
+# 	inner_uv = -inner_uv - 1. + 1e-7
+# 	# inner_uv = K.maximum(inner_uv, K.epsilon()) # clip to avoid nan
 
-	d_uv = tf.acosh(1. + inner_uv)
-	return d_uv
+# 	d_uv = tf.acosh(1. + inner_uv)
+# 	return d_uv
 
 def hyperboloid_initializer(shape, r_max=1e-3):
 
@@ -97,13 +97,13 @@ def hyperboloid_initializer(shape, r_max=1e-3):
 	w = tf.random_uniform(shape=shape, minval=-r_max, maxval=r_max, dtype=K.floatx())
 	return poincare_ball_to_hyperboloid(w)
 
-class EmbeddingLayer(Layer):
+class HyperboloidEmbeddingLayer(Layer):
 	
 	def __init__(self, 
 		num_nodes, 
 		embedding_dim, 
 		**kwargs):
-		super(EmbeddingLayer, self).__init__(**kwargs)
+		super(HyperboloidEmbeddingLayer, self).__init__(**kwargs)
 		self.num_nodes = num_nodes
 		self.embedding_dim = embedding_dim
 
@@ -113,11 +113,12 @@ class EmbeddingLayer(Layer):
 		  shape=(self.num_nodes, self.embedding_dim),
 		  initializer=hyperboloid_initializer,
 		  trainable=True)
-		super(EmbeddingLayer, self).build(input_shape)
+		super(HyperboloidEmbeddingLayer, self).build(input_shape)
 
-	def call(self, x):
+	def call(self, idx):
 
-		embedding = tf.gather(self.embedding, x)
+		# embedding = tf.gather(self.embedding, idx)
+		embedding = tf.nn.embedding_lookup(self.embedding, idx)
 
 		return embedding
 
@@ -125,8 +126,9 @@ class EmbeddingLayer(Layer):
 		return (input_shape[0], input_shape[1], self.embedding_dim+1)
 	
 	def get_config(self):
-		base_config = super(EmbeddingLayer, self).get_config()
-		return base_config.update({"num_nodes": self.num_nodes, "embedding_dim": self.embedding_dim})
+		base_config = super(HyperboloidEmbeddingLayer, self).get_config()
+		base_config.update({"num_nodes": self.num_nodes, "embedding_dim": self.embedding_dim})
+		return base_config
 
 class ExponentialMappingOptimizer(optimizer.Optimizer):
 	
@@ -143,7 +145,6 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		self._lr_t = ops.convert_to_tensor(self._lr, name="learning_rate", dtype=K.floatx())
 
 	def _apply_dense(self, grad, var):
-		assert False
 		lr_t = math_ops.cast(self._lr_t, var.dtype.base_dtype)
 		spacial_grad = grad[:,:-1]
 		t_grad = -1 * grad[:,-1:]
@@ -159,7 +160,8 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		indices = grad.indices
 		values = grad.values
 
-		p = tf.gather(var, indices, name="gather_apply_sparse")
+		# p = tf.gather(var, indices, name="gather_apply_sparse")
+		p = tf.nn.embedding_lookup(var, indices)
 
 		lr_t = math_ops.cast(self._lr_t, var.dtype.base_dtype)
 		spacial_grad = values[:, :-1]
@@ -170,58 +172,56 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		tangent_grad = self.project_onto_tangent_space(p, ambient_grad)
 		exp_map = self.exponential_mapping(p, - lr_t * tangent_grad)
 
-		out = tf.scatter_update(ref=var, updates=exp_map, indices=indices, name="scatter_update")
-
-		return out
+		return tf.scatter_update(ref=var, indices=indices, updates=exp_map, name="scatter_update")
 	
 	def project_onto_tangent_space(self, hyperboloid_point, minkowski_ambient):
 		return minkowski_ambient + minkowski_dot(hyperboloid_point, minkowski_ambient) * hyperboloid_point
    
 	def exponential_mapping( self, p, x ):
 
-		def adjust_to_hyperboloid(x):
-			x = x[:,:-1]
-			t = K.sqrt(1. + K.sum(K.square(x), axis=-1, keepdims=True))
-			return tf.concat([x, t], axis=-1)
+		def normalise_to_hyperboloid(x):
+			return x / K.sqrt(-minkowski_dot(x, x))
+			# x = x[:,:-1]
+			# t = K.sqrt(1. + K.sum(K.square(x), axis=-1, keepdims=True))
+			# return tf.concat([x, t], axis=-1)
 
-		norm_x = K.sqrt(  minkowski_dot(x, x) ) 
-		clipped_norm_x = K.minimum(norm_x, self.max_norm)
+		norm_x = K.sqrt( minkowski_dot(x, x) ) 
+		# clipped_norm_x = norm_x
+		# clipped_norm_x = K.minimum(norm_x, self.max_norm)
 		####################################################
-		exp_map_p = tf.cosh(clipped_norm_x) * p
+		# exp_map_p = tf.cosh(norm_x) * p
 		
-		idx = tf.cast( tf.where(norm_x > K.cast(0., K.floatx()), )[:,0], tf.int64)
-		non_zero_norm = tf.gather(norm_x, idx)
-		clipped_non_zero_norm = tf.gather(clipped_norm_x, idx)
-		z = tf.gather(x, idx) / non_zero_norm
+		# idx = tf.cast( tf.where(norm_x > K.cast(0., K.floatx()), )[:,0], tf.int64)
+		# non_zero_norm = tf.gather(norm_x, idx)
+		# clipped_non_zero_norm = tf.gather(norm_x, idx)
+		# z = tf.gather(x, idx) / non_zero_norm
 
-		updates = tf.sinh(clipped_non_zero_norm) * z
-		dense_shape = tf.cast( tf.shape(p), tf.int64)
-		exp_map_x = tf.scatter_nd(indices=idx[:,None], updates=updates, shape=dense_shape)
+		# updates = tf.sinh(clipped_non_zero_norm) * z
+		# dense_shape = tf.cast( tf.shape(p), tf.int64)
+		# exp_map_x = tf.scatter_nd(indices=idx[:,None], updates=updates, shape=dense_shape)
 		
-		exp_map = exp_map_p + exp_map_x 
+		# exp_map = exp_map_p + exp_map_x 
 		#####################################################
-		# z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
-		# exp_map = tf.cosh(clipped_norm_x) * p + tf.sinh(clipped_norm_x) * z
+		z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
+		# z = x / norm_x # unit norm 
+		exp_map = tf.cosh(norm_x) * p + tf.sinh(norm_x) * z
 		#####################################################
-		exp_map = adjust_to_hyperboloid(exp_map) # account for floating point imprecision
+		exp_map = normalise_to_hyperboloid(exp_map) # account for floating point imprecision
 
 		return exp_map
 
 def build_model(num_nodes, args):
 
-	x = Input(shape=(1 + 1 + args.num_negative_samples,), 
-		name="model_input", dtype=tf.int64)
-	y = EmbeddingLayer(num_nodes, args.embedding_dim, name="embedding_layer")(x)
+	x = Input(shape=(1 + 1 + args.num_negative_samples, ), 
+		name="model_input", 
+		dtype=tf.int32
+		)
+	y = HyperboloidEmbeddingLayer(num_nodes, args.embedding_dim, name="embedding_layer")(x)
 	model = Model(x, y)
 
 	initial_epoch = 0
 
 	return model, initial_epoch
-
-def load_embedding(filename):
-	with h5py.File(filename, 'r') as f:
-		embedding = np.array(f.get("embedding_layer/embedding_layer/embedding:0"))
-	return embedding
 
 def parse_args():
 	'''
@@ -235,7 +235,6 @@ def parse_args():
 		help="features to load.")
 	parser.add_argument("--labels", dest="labels", type=str, default=None,#default="datasets/cora_ml/labels.csv",
 		help="path to labels")
-
 
 	parser.add_argument("--seed", dest="seed", type=int, default=0,
 		help="Random seed (default is 0).")
@@ -251,7 +250,7 @@ def parse_args():
 	parser.add_argument("--context-size", dest="context_size", type=int, default=3,
 		help="Context size for generating positive samples (default is 3).")
 	parser.add_argument("--patience", dest="patience", type=int, default=300,
-		help="The number of epochs of no improvement in validation loss before training is stopped. (Default is 300)")
+		help="The number of epochs of no improvement in loss before training is stopped. (Default is 300)")
 
 	parser.add_argument("-d", "--dim", dest="embedding_dim", type=int,
 		help="Dimension of embeddings for each layer (default is 2).", default=2)
@@ -265,7 +264,7 @@ def parse_args():
 	parser.add_argument('--walk-length', dest="walk_length", type=int, default=80, 
 		help="Length of random walk from source (default is 80).")
 
-	parser.add_argument("--sigma", dest="sigma", type=float, default=1,
+	parser.add_argument("--sigma", dest="sigma", type=np.float64, default=1,
 		help="Width of gaussian (default is 1).")
 
 	parser.add_argument("--alpha", dest="alpha", type=float, default=0, 
@@ -289,6 +288,10 @@ def parse_args():
 	parser.add_argument('--visualise', action="store_true", 
 		help='flag to visualise embedding (embedding_dim must be 2)')
 
+
+	parser.add_argument('--no-walks', action="store_true", 
+		help='flag to only train on edgelist (no random walks)')
+
 	args = parser.parse_args()
 	return args
 
@@ -300,7 +303,6 @@ def configure_paths(args):
 	directory = os.path.join("alpha={:.02f}".format(args.alpha),
 		"seed={:03d}".format(args.seed))
 	
-
 	args.walk_path = os.path.join(args.walk_path, directory)
 	args.embedding_path = os.path.join(args.embedding_path, directory, "dim={:03d}".format(args.embedding_dim) )
 
@@ -355,34 +357,28 @@ def main():
 	optimizer = ExponentialMappingOptimizer(learning_rate=args.lr)
 	loss = hyperbolic_softmax_loss(sigma=args.sigma)
 	model.compile(optimizer=optimizer, loss=loss, 
-		target_tensors=[tf.placeholder(dtype=np.int64)])
+		target_tensors=[tf.placeholder(dtype=np.int32)]
+		)
 	model.summary()
 
-	callbacks = [EarlyStopping(monitor="loss", patience=5, verbose=True)]			
-
-	walks = perform_walks(graph, features, args)
+	callbacks = [EarlyStopping(monitor="loss", patience=args.patience, verbose=True)]			
 
 	positive_samples, negative_samples, alias_dict =\
-		determine_positive_and_negative_samples(nodes=graph.nodes(), 
-		walks=walks, context_size=args.context_size, directed=args.directed)
+			determine_positive_and_negative_samples(graph, features, args)
+
 
 	random.shuffle(positive_samples)
-
-	if not args.use_generator:
-		train_x = build_training_samples(np.array(positive_samples), 
-				negative_samples,
-				args.num_negative_samples, 
-				alias_dict)
-		train_y = np.zeros([len(train_x), 1], dtype=np.int64)
 
 	if args.use_generator:
 		print ("Training with data generator with {} worker threads".format(args.workers))
 		training_generator = TrainingDataGenerator(positive_samples,  
-				negative_samples, alias_dict, args)
+				negative_samples, 
+				alias_dict, 
+				args)
 
 		model.fit_generator(training_generator, 
 			workers=args.workers,
-			max_queue_size=10, 
+			max_queue_size=100, 
 			use_multiprocessing=args.workers>0, 
 			epochs=args.num_epochs, 
 			initial_epoch=initial_epoch, 
@@ -393,7 +389,16 @@ def main():
 	else:
 		print ("Training without data generator")
 
+		train_x = build_training_samples(np.array(positive_samples), 
+				negative_samples,
+				args.num_negative_samples, 
+				alias_dict)
+		train_y = np.zeros([len(train_x), 1, 1], dtype=int )
+		# train_y = np.zeros([len(train_x), args.num_negative_samples + 1, 1], )
+		# train_y[:,0] = 1
+
 		model.fit(train_x, train_y, 
+			shuffle=True,
 			batch_size=args.batch_size, 
 			epochs=args.num_epochs, 
 			initial_epoch=initial_epoch, 
@@ -409,7 +414,6 @@ def main():
 
 	if args.visualise:
 		embedding = hyperboloid_to_poincare_ball(embedding)
-		# assert args.directed
 		draw_graph(undirected_edges if not args.directed else directed_edges, 
 			embedding, node_labels, path="2d-poincare-visualisation.png")
 

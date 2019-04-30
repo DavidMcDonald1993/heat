@@ -119,7 +119,7 @@ def parse_args():
 
 	parser = argparse.ArgumentParser(description='Load Hyperboloid Embeddings and evaluate link prediction')
 	
-	parser.add_argument("--output", dest="output", type=str, default="edgelists/cora_ml",
+	parser.add_argument("--output", dest="output", type=str, 
 		help="path to load training and removed edges")
 
 	parser.add_argument("--embedding", dest="embedding_filename",  

@@ -7,6 +7,8 @@ from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import f1_score
 
+from skmultilearn.model_selection import iterative_train_test_split
+
 from heat.utils import load_data, hyperboloid_to_klein, load_embedding, poincare_ball_to_hyperboloid
 
 import functools
@@ -27,27 +29,42 @@ def evaluate_node_classification(klein_embedding, labels,
 	split = StratifiedShuffleSplit
 
 	if labels.shape[1] == 1:
+		print ("single label clasification")
 		labels = labels.flatten()
 
-	if len(labels.shape) > 1: # multilabel classification
+		for seed in range(n_repeats):
+		
+			for i, label_percentage in enumerate(label_percentages):
+
+				sss = split(n_splits=1, test_size=1-label_percentage, random_state=seed)
+				split_train, split_test = next(sss.split(klein_embedding, labels))
+				model.fit(klein_embedding[split_train], labels[split_train])
+				predictions = model.predict(klein_embedding[split_test])
+				f1_micro = f1_score(labels[split_test], predictions, average="micro")
+				f1_macro = f1_score(labels[split_test], predictions, average="macro")
+				f1_micros[seed,i] = f1_micro
+				f1_macros[seed,i] = f1_macro
+			print ("completed repeat {}".format(seed+1))
+
+	# if len(labels.shape) > 1: # multilabel classification
+	else:
+		print ("multilabel classification")
 		model = OneVsRestClassifier(model)
-		split = ShuffleSplit
+		# split = ShuffleSplit
 
-	n = len(klein_embedding)
+		for seed in range(n_repeats):
+		
+			for i, label_percentage in enumerate(label_percentages):
 
-	for seed in range(n_repeats):
-	
-		for i, label_percentage in enumerate(label_percentages):
+				X_train, y_train, X_test, y_test = iterative_train_test_split(klein_embedding, labels, test_size=1-label_percentage)
 
-			sss = split(n_splits=1, test_size=1-label_percentage, random_state=seed)
-			split_train, split_test = next(sss.split(klein_embedding, labels))
-			model.fit(klein_embedding[split_train], labels[split_train])
-			predictions = model.predict(klein_embedding[split_test])
-			f1_micro = f1_score(labels[split_test], predictions, average="micro")
-			f1_macro = f1_score(labels[split_test], predictions, average="macro")
-			f1_micros[seed,i] = f1_micro
-			f1_macros[seed,i] = f1_macro
-		print ("completed repeat {}".format(seed+1))
+				model.fit(X_train, y_train)
+				predictions = model.predict(X_test)
+				f1_micro = f1_score(y_test, predictions, average="micro")
+				f1_macro = f1_score(y_test, predictions, average="macro")
+				f1_micros[seed,i] = f1_micro
+				f1_macros[seed,i] = f1_macro
+			print ("completed repeat {}".format(seed+1))
 
 	return label_percentages, f1_micros.mean(axis=0), f1_macros.mean(axis=0)
 
@@ -107,11 +124,11 @@ def parse_args():
 
 	parser = argparse.ArgumentParser(description='Load Hyperboloid Embeddings and evaluate node classification')
 	
-	parser.add_argument("--edgelist", dest="edgelist", type=str, default="datasets/cora_ml/edgelist.tsv",
+	parser.add_argument("--edgelist", dest="edgelist", type=str, 
 		help="edgelist to load.")
-	parser.add_argument("--features", dest="features", type=str, default="datasets/cora_ml/feats.csv",
+	parser.add_argument("--features", dest="features", type=str, 
 		help="features to load.")
-	parser.add_argument("--labels", dest="labels", type=str, default="datasets/cora_ml/labels.csv",
+	parser.add_argument("--labels", dest="labels", type=str, 
 		help="path to labels")
 
 	parser.add_argument('--directed', action="store_true", help='flag to train on directed graph')

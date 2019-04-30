@@ -24,7 +24,7 @@ do
 			module load apps/python3/3.5.2\; \
 			)
 
-			cmd_nc=$(echo python evaluate_nc.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
+			cmd_nc=$(echo -e pip install --user scikit-multilearn\npython evaluate_nc.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
 			--seed ${seed} --poincare)
 			cmd_recon=$(echo python evaluate_reconstruction.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
 			--seed ${seed} --poincare)

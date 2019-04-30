@@ -9,7 +9,7 @@ mem=3
 for dataset in cora_ml citeseer ppi
 do
 	for dim in 5 10 25 50
-	do
+	dop	
 		for seed in {0..29}
 		do
 
@@ -24,7 +24,7 @@ do
 			module load apps/python3/3.5.2\; \
 			)
 
-			cmd_nc=$(echo python evaluate_nc.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
+			cmd_nc=$(echo -e pip install --user scikit-multilearn\npython evaluate_nc.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
 			--seed ${seed})
 			cmd_recon=$(echo python evaluate_reconstruction.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
 			--seed ${seed})
