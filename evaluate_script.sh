@@ -18,7 +18,7 @@ do
 			features=${data_dir}/feats.csv
 			labels=${data_dir}/labels.csv
 
-			modules=$(echo -e \
+			modules=$(echo \
 			module purge\; \
 			module load bluebear\; \
 			module load Python/3.6.3-iomkl-2018a\; \
