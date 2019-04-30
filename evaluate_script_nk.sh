@@ -18,11 +18,11 @@ do
 			features=${data_dir}/feats.csv
 			labels=${data_dir}/labels.csv
 
-			modules=$(echo -e \
-			"module purge\n \
-			module load bluebear\n \
-			module load Python/3.6.3-iomkl-2018a\n \
-			pip install --user numpy pandas networkx scikit-learn scikit-multilearn" 
+			modules=$(echo \
+			module purge\; \
+			module load bluebear\; \
+			module load Python/3.6.3-iomkl-2018a\; \
+			pip install --user numpy pandas networkx scikit-learn scikit-multilearn\; \
 			)
 
 			cmd_nc=$(echo python evaluate_nc.py --edgelist ${edgelist} --features ${features} --labels ${labels} \
