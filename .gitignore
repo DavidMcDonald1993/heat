@@ -2,3 +2,5 @@ heat/data_utils.py
 heat/clustering_hyperboloid.py
 heat/greedy_routing.py
 heat/tree.py
+heat/metrics.py
+heat/callbacks.py

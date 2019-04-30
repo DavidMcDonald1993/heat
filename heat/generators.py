@@ -36,7 +36,7 @@ class TrainingDataGenerator(Sequence):
 		batch_negative_samples = np.array([
 			negative_samples[u][self.alias_draw(alias_dict[u][0], alias_dict[u][1], size=num_negative_samples)]
 			for u in input_nodes
-		], dtype=np.int64)
+		], dtype=np.int32)
 
 		batch_nodes = np.concatenate([batch_positive_samples, batch_negative_samples], axis=1)
 
@@ -49,10 +49,10 @@ class TrainingDataGenerator(Sequence):
 		batch_size = self.batch_size
 		positive_samples = self.positive_samples
 		batch_positive_samples = np.array(
-			positive_samples[batch_idx * batch_size : (batch_idx + 1) * batch_size], dtype=np.int64)
+			positive_samples[batch_idx * batch_size : (batch_idx + 1) * batch_size], dtype=np.int32)
 		training_sample = self.get_training_sample(batch_positive_samples)
 		
-		target = np.zeros((training_sample.shape[0],  1, 1))
+		target = np.zeros((training_sample.shape[0], 1, 1))
 		# target = np.zeros((training_sample.shape[0],  self.num_negative_samples + 1, 1))
 		
 		return training_sample, target

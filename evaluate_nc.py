@@ -7,7 +7,7 @@ from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import f1_score
 
-from skmultilearn.model_selection import iterative_train_test_split
+from skmultilearn.model_selection import IterativeStratification
 
 from heat.utils import load_data, hyperboloid_to_klein, load_embedding, poincare_ball_to_hyperboloid
 
@@ -26,11 +26,12 @@ def evaluate_node_classification(klein_embedding, labels,
 	f1_macros = np.zeros((n_repeats, len(label_percentages)))
 	
 	model = LogisticRegressionCV()
-	split = StratifiedShuffleSplit
 
 	if labels.shape[1] == 1:
 		print ("single label clasification")
 		labels = labels.flatten()
+
+		split = StratifiedShuffleSplit
 
 		for seed in range(n_repeats):
 		
@@ -50,18 +51,20 @@ def evaluate_node_classification(klein_embedding, labels,
 	else:
 		print ("multilabel classification")
 		model = OneVsRestClassifier(model)
-		# split = ShuffleSplit
+		split = IterativeStratification
 
 		for seed in range(n_repeats):
 		
 			for i, label_percentage in enumerate(label_percentages):
 
-				X_train, y_train, X_test, y_test = iterative_train_test_split(klein_embedding, labels, test_size=1-label_percentage)
-
-				model.fit(X_train, y_train)
-				predictions = model.predict(X_test)
-				f1_micro = f1_score(y_test, predictions, average="micro")
-				f1_macro = f1_score(y_test, predictions, average="macro")
+				# X_train, y_train, X_test, y_test = iterative_train_test_split(klein_embedding, labels, test_size=1-label_percentage)
+				sss = split(n_splits=2, order=2, random_state=seed,
+					sample_distribution_per_fold=[1.0-label_percentage, label_percentage])
+				split_train, split_test = next(sss.split(klein_embedding, labels))
+				model.fit(klein_embedding[split_train], labels[split_train])
+				predictions = model.predict(klein_embedding[split_test])
+				f1_micro = f1_score(labels[split_test], predictions, average="micro")
+				f1_macro = f1_score(labels[split_test], predictions, average="macro")
 				f1_micros[seed,i] = f1_micro
 				f1_macros[seed,i] = f1_macro
 			print ("completed repeat {}".format(seed+1))

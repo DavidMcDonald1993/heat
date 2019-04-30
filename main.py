@@ -93,8 +93,8 @@ def hyperboloid_initializer(shape, r_max=1e-3):
 		U = tf.random_uniform(shape=(num_samples, 1), dtype=K.floatx())
 		return r_max * U ** (1./dim) * X / X_norm
 
-	# w = sphere_uniform_sample(shape, r_max=r_max)
-	w = tf.random_uniform(shape=shape, minval=-r_max, maxval=r_max, dtype=K.floatx())
+	w = sphere_uniform_sample(shape, r_max=r_max)
+	# w = tf.random_uniform(shape=shape, minval=-r_max, maxval=r_max, dtype=K.floatx())
 	return poincare_ball_to_hyperboloid(w)
 
 class HyperboloidEmbeddingLayer(Layer):
@@ -135,11 +135,9 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 	def __init__(self, 
 		learning_rate=0.1, 
 		use_locking=False,
-		name="ExponentialMappingOptimizer", 
-		max_norm=np.inf):
+		name="ExponentialMappingOptimizer"):
 		super(ExponentialMappingOptimizer, self).__init__(use_locking, name)
 		self._lr = learning_rate
-		self.max_norm = max_norm
 
 	def _prepare(self):
 		self._lr_t = ops.convert_to_tensor(self._lr, name="learning_rate", dtype=K.floatx())
@@ -165,7 +163,7 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 
 		lr_t = math_ops.cast(self._lr_t, var.dtype.base_dtype)
 		spacial_grad = values[:, :-1]
-		t_grad = - values[:, -1:]
+		t_grad = -values[:, -1:]
 
 		ambient_grad = tf.concat([spacial_grad, t_grad], axis=-1, name="optimizer_concat")
 
@@ -181,29 +179,22 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 
 		def normalise_to_hyperboloid(x):
 			return x / K.sqrt(-minkowski_dot(x, x))
-			# x = x[:,:-1]
-			# t = K.sqrt(1. + K.sum(K.square(x), axis=-1, keepdims=True))
-			# return tf.concat([x, t], axis=-1)
 
 		norm_x = K.sqrt( minkowski_dot(x, x) ) 
-		# clipped_norm_x = norm_x
-		# clipped_norm_x = K.minimum(norm_x, self.max_norm)
 		####################################################
 		# exp_map_p = tf.cosh(norm_x) * p
 		
 		# idx = tf.cast( tf.where(norm_x > K.cast(0., K.floatx()), )[:,0], tf.int64)
 		# non_zero_norm = tf.gather(norm_x, idx)
-		# clipped_non_zero_norm = tf.gather(norm_x, idx)
 		# z = tf.gather(x, idx) / non_zero_norm
 
-		# updates = tf.sinh(clipped_non_zero_norm) * z
+		# updates = tf.sinh(non_zero_norm) * z
 		# dense_shape = tf.cast( tf.shape(p), tf.int64)
 		# exp_map_x = tf.scatter_nd(indices=idx[:,None], updates=updates, shape=dense_shape)
 		
 		# exp_map = exp_map_p + exp_map_x 
 		#####################################################
 		z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
-		# z = x / norm_x # unit norm 
 		exp_map = tf.cosh(norm_x) * p + tf.sinh(norm_x) * z
 		#####################################################
 		exp_map = normalise_to_hyperboloid(exp_map) # account for floating point imprecision
@@ -214,8 +205,7 @@ def build_model(num_nodes, args):
 
 	x = Input(shape=(1 + 1 + args.num_negative_samples, ), 
 		name="model_input", 
-		dtype=tf.int32
-		)
+		dtype=tf.int32)
 	y = HyperboloidEmbeddingLayer(num_nodes, args.embedding_dim, name="embedding_layer")(x)
 	model = Model(x, y)
 
@@ -264,7 +254,7 @@ def parse_args():
 	parser.add_argument('--walk-length', dest="walk_length", type=int, default=80, 
 		help="Length of random walk from source (default is 80).")
 
-	parser.add_argument("--sigma", dest="sigma", type=np.float64, default=1,
+	parser.add_argument("--sigma", dest="sigma", type=np.float64, default=1.,
 		help="Width of gaussian (default is 1).")
 
 	parser.add_argument("--alpha", dest="alpha", type=float, default=0, 
@@ -287,7 +277,6 @@ def parse_args():
 
 	parser.add_argument('--visualise', action="store_true", 
 		help='flag to visualise embedding (embedding_dim must be 2)')
-
 
 	parser.add_argument('--no-walks', action="store_true", 
 		help='flag to only train on edgelist (no random walks)')
@@ -341,14 +330,15 @@ def main():
 	print ("Configured paths")
 
 	if args.directed:
-		directed_edges = graph.edges()
+		directed_edges = list(graph.edges())
 		print ("DISCOVERED {} DIRECTED EDGES".format(len(directed_edges)))
 	else:
 		directed_edges = None
 
 	graph = graph.to_undirected() # we perform walks on undirected matrix
+	
 	# original edges for reconstruction
-	undirected_edges = graph.edges()
+	undirected_edges = list(graph.edges())
 
 	# build model
 	num_nodes = len(graph)
@@ -356,16 +346,15 @@ def main():
 
 	optimizer = ExponentialMappingOptimizer(learning_rate=args.lr)
 	loss = hyperbolic_softmax_loss(sigma=args.sigma)
-	model.compile(optimizer=optimizer, loss=loss, 
-		target_tensors=[tf.placeholder(dtype=np.int32)]
-		)
+	model.compile(optimizer=optimizer, 
+		loss=loss, 
+		target_tensors=[tf.placeholder(dtype=np.int32)])
 	model.summary()
 
 	callbacks = [EarlyStopping(monitor="loss", patience=args.patience, verbose=True)]			
 
 	positive_samples, negative_samples, alias_dict =\
 			determine_positive_and_negative_samples(graph, features, args)
-
 
 	random.shuffle(positive_samples)
 

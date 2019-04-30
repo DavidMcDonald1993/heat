@@ -29,8 +29,12 @@ def load_data(args):
 	graph = nx.read_weighted_edgelist(edgelist_filename, delimiter="\t", nodetype=int,
 		create_using=nx.DiGraph() if args.directed else nx.Graph())
 
+
 	# remove self loops as they slow down random walk
 	graph.remove_edges_from(graph.selfloop_edges())
+	print ("removing all self loop edges")
+
+	print ("number of nodes: {}\nnumber of edges: {}\n".format(len(graph), len(graph.edges())))
 
 	if features_filename is not None:
 
@@ -148,9 +152,7 @@ def convert_edgelist_to_dict(edgelist, undirected=True, self_edges=False):
 
 def get_training_sample(samples, num_negative_samples, ):
 	positive_sample_pair, negative_samples, probs = samples
-	# u = positive_sample_pair[0]
 	negative_samples_ = negative_samples[alias_draw(probs[0], probs[1], num_negative_samples)]
-	# negative_samples_ = np.random.choice(negative_samples, size=num_negative_samples, replace=True, p=probs)
 	return np.append(positive_sample_pair, negative_samples_, )
 
 def build_training_samples(positive_samples, negative_samples, num_negative_samples, alias_dict):
@@ -184,7 +186,6 @@ def create_second_order_topology_graph(topology_graph, args):
 
 	return second_order_topology_graph
 
-
 def create_feature_graph(features, args):
 
 	features_sim = cosine_similarity(features)
@@ -209,23 +210,23 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		positive_samples = list(graph.edges())
 		positive_samples += [(v, u) for (u, v) in positive_samples]
+		positive_samples *= 100
 
 		all_positive_samples = {n: set(graph.neighbors(n)) for n in sorted(graph.nodes())}
 
 		# counts = np.ones(len(graph))
-		counts = np.array([graph.degree(n) for n in sorted(graph.nodes())])
+		counts = np.array([graph.degree(n) for n in sorted(nodes)])
 
 	else:
-	
-		walks = perform_walks(graph, features, args)
 
 		print ("determining positive and negative samples using random walks")
+
+		walks = perform_walks(graph, features, args)
 
 		context_size = args.context_size
 		directed = False
 		
 		all_positive_samples = {n: set() for n in sorted(nodes)}
-		negative_samples = {n: set() for n in sorted(nodes)}
 
 		positive_samples = []
 
@@ -239,10 +240,10 @@ def determine_positive_and_negative_samples(graph, features, args):
 					if i+j+1 >= len(walk):
 						break
 					v = walk[i+j+1]
-					if u == v:
-						continue
-					positive_samples.extend([(u, v)])
-					positive_samples.extend([(v, u)])
+					# if u == v:
+					# 	continue
+					positive_samples.append((u, v))
+					positive_samples.append((v, u))
 
 					all_positive_samples[u].add(v)
 					all_positive_samples[v].add(u)
@@ -250,10 +251,8 @@ def determine_positive_and_negative_samples(graph, features, args):
 			if num_walk % 1000 == 0:  
 				print ("processed walk {:04d}/{}".format(num_walk, len(walks)))
 
-		counts = np.array(list(counts.values()))
-		# counts = np.array([graph.degree(n) for n in sorted(graph.nodes())])
+		counts = np.array([counts[n] for n in sorted(nodes)])
 		
-
 	negative_samples = {n: np.array(sorted(nodes.difference(all_positive_samples[n]))) for n in sorted(nodes)}
 	# negative_samples = {n: np.array(sorted(nodes)) for n in sorted(nodes)}
 	for u, neg_samples in negative_samples.items():
@@ -264,7 +263,7 @@ def determine_positive_and_negative_samples(graph, features, args):
 	print ("found {} positive sample pairs".format(len(positive_samples)))
 
 	counts = counts ** 0.75
-	probs = counts #/ counts.sum()
+	probs = counts 
 
 	prob_dict = {n: probs[negative_samples[n]] for n in sorted(nodes)}
 	prob_dict = {n: p / p.sum() for n, p in prob_dict.items()}

@@ -39,7 +39,7 @@ class Graph():
 			# node2vec style random walk 
 			cur_nbrs = sorted(graph.neighbors(cur))
 
-			if (not feature_sim is None 
+			if (feature_sim is not None 
 				and self.alpha > 0 
 				and not (feature_sim[cur]<1e-15).all() 
 				and (np.random.rand() < self.alpha or len(cur_nbrs) == 0)):
@@ -69,7 +69,7 @@ class Graph():
 		'''
 		graph = self.graph
 		walks = []
-		nodes = list(graph.nodes())
+		nodes = sorted(graph.nodes())
 		i = 0
 
 		print ("PERFORMING WALKS")
