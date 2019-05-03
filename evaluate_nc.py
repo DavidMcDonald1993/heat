@@ -15,12 +15,54 @@ import functools
 import fcntl
 import argparse
 
+def hamming_score(y_true, y_pred, normalize=True, sample_weight=None):
+    '''
+    Compute the Hamming score (a.k.a. label-based accuracy) for the multi-label case
+    https://stackoverflow.com/q/32239577/395857
+    '''
+    acc_list = []
+    for i in range(y_true.shape[0]):
+        set_true = set( np.where(y_true[i])[0] )
+        set_pred = set( np.where(y_pred[i])[0] )
+        #print('\nset_true: {0}'.format(set_true))
+        #print('set_pred: {0}'.format(set_pred))
+        tmp_a = None
+        if len(set_true) == 0 and len(set_pred) == 0:
+            tmp_a = 1
+        else:
+            tmp_a = len(set_true.intersection(set_pred))/\
+                    float( len(set_true.union(set_pred)) )
+        #print('tmp_a: {0}'.format(tmp_a))
+        acc_list.append(tmp_a)
+    return np.mean(acc_list)
+
+def evaluate_kfold_multilabel_classification(klein_embedding, labels, model,
+	n_repeats=10):
+	assert len(labels.shape) == 2
+	sss = IterativeStratification(n_splits=n_repeats, 
+		random_state=0,
+		order=2)
+	f1_micros = []
+	f1_macros = []
+	hammings = []
+	i = 1
+	for split_train, split_test in sss.split(klein_embedding, labels):
+		model.fit(klein_embedding[split_train], labels[split_train])		
+		predictions = model.predict(klein_embedding[split_test])
+		f1_micro = f1_score(labels[split_test], predictions, average="micro")
+		f1_macro = f1_score(labels[split_test], predictions, average="macro")
+		f1_micros.append(f1_micro)
+		f1_macros.append(f1_macro)
+		print ("Done {}/{} folds".format(i, n_repeats))
+		hamming = hamming_score(labels[split_test], predictions)
+		hammings.append(hamming)
+		i += 1
+	return None, np.mean(f1_micros), np.mean(f1_macros), np.mean(hammings)
+
 def evaluate_node_classification(klein_embedding, labels,
 	label_percentages=np.arange(0.02, 0.11, 0.01), n_repeats=10):
 
 	print ("Evaluating node classification")
-
-	num_nodes, dim = klein_embedding.shape
 
 	f1_micros = np.zeros((n_repeats, len(label_percentages)))
 	f1_macros = np.zeros((n_repeats, len(label_percentages)))
@@ -47,8 +89,7 @@ def evaluate_node_classification(klein_embedding, labels,
 				f1_macros[seed,i] = f1_macro
 			print ("completed repeat {}".format(seed+1))
 
-	# if len(labels.shape) > 1: # multilabel classification
-	else:
+	else: # multilabel classification
 		print ("multilabel classification")
 		model = OneVsRestClassifier(model)
 		split = IterativeStratification
@@ -57,8 +98,7 @@ def evaluate_node_classification(klein_embedding, labels,
 		
 			for i, label_percentage in enumerate(label_percentages):
 
-				# X_train, y_train, X_test, y_test = iterative_train_test_split(klein_embedding, labels, test_size=1-label_percentage)
-				sss = split(n_splits=2, order=2, random_state=seed,
+				sss = split(n_splits=2, order=3, random_state=seed,
 					sample_distribution_per_fold=[1.0-label_percentage, label_percentage])
 				split_train, split_test = next(sss.split(klein_embedding, labels))
 				model.fit(klein_embedding[split_train], labels[split_train])

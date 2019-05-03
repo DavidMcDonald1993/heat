@@ -29,7 +29,6 @@ def load_data(args):
 	graph = nx.read_weighted_edgelist(edgelist_filename, delimiter="\t", nodetype=int,
 		create_using=nx.DiGraph() if args.directed else nx.Graph())
 
-
 	# remove self loops as they slow down random walk
 	graph.remove_edges_from(graph.selfloop_edges())
 	print ("removing all self loop edges")
@@ -38,6 +37,8 @@ def load_data(args):
 
 	if features_filename is not None:
 
+		print ("loading features from {}".format(features_filename))
+
 		if features_filename.endswith(".csv"):
 			features = pd.read_csv(features_filename, index_col=0, sep=",")
 			features = features.reindex(sorted(graph.nodes())).values
@@ -45,17 +46,19 @@ def load_data(args):
 		else:
 			raise Exception
 
+		print ("features shape is {}\n".format(features.shape))
+
 	else: 
 		features = None
 
 	if labels_filename is not None:
 
+		print ("loading labels from {}".format(labels_filename))
+
 		if labels_filename.endswith(".csv"):
 			labels = pd.read_csv(labels_filename, index_col=0, sep=",")
 			labels = labels.reindex(sorted(graph.nodes())).values#.flatten()
 			assert len(labels.shape) == 2
-			# if labels.shape[1] == 1:
-			# 	labels = labels.flatten()
 		elif labels_filename.endswith(".pkl"):
 			with open(labels_filename, "rb") as f:
 				labels = pkl.load(f)
@@ -63,10 +66,10 @@ def load_data(args):
 		else:
 			raise Exception
 
+		print ("labels shape is {}\n".format(labels.shape))
+
 	else:
 		labels = None
-
-	# graph = nx.convert_node_labels_to_integers(graph, label_attribute="original_name", ordering="sorted")
 
 	return graph, features, labels
 
@@ -210,11 +213,9 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		positive_samples = list(graph.edges())
 		positive_samples += [(v, u) for (u, v) in positive_samples]
-		positive_samples *= 100
 
-		all_positive_samples = {n: set(graph.neighbors(n)) for n in sorted(graph.nodes())}
+		all_positive_samples = {n: set(graph.neighbors(n)) for n in sorted(nodes)}
 
-		# counts = np.ones(len(graph))
 		counts = np.array([graph.degree(n) for n in sorted(nodes)])
 
 	else:
@@ -240,8 +241,8 @@ def determine_positive_and_negative_samples(graph, features, args):
 					if i+j+1 >= len(walk):
 						break
 					v = walk[i+j+1]
-					# if u == v:
-					# 	continue
+					if u == v:
+						continue
 					positive_samples.append((u, v))
 					positive_samples.append((v, u))
 
@@ -252,9 +253,8 @@ def determine_positive_and_negative_samples(graph, features, args):
 				print ("processed walk {:04d}/{}".format(num_walk, len(walks)))
 
 		counts = np.array([counts[n] for n in sorted(nodes)])
-		
+
 	negative_samples = {n: np.array(sorted(nodes.difference(all_positive_samples[n]))) for n in sorted(nodes)}
-	# negative_samples = {n: np.array(sorted(nodes)) for n in sorted(nodes)}
 	for u, neg_samples in negative_samples.items():
 		assert len(neg_samples) > 0, "node {} does not have any negative samples".format(u)
 		# print ("node {} has {} negative samples".format(u, len(neg_samples)))

@@ -29,7 +29,7 @@ from tensorflow.python.training import optimizer
 
 from heat.utils import build_training_samples, hyperboloid_to_poincare_ball, load_data
 from heat.utils import perform_walks, determine_positive_and_negative_samples
-from heat.losses import  hyperbolic_softmax_loss
+from heat.losses import  hyperbolic_softmax_loss, hyperbolic_sigmoid_loss, hyperbolic_hypersphere_loss
 from heat.generators import TrainingDataGenerator
 from heat.visualise import draw_graph
 
@@ -64,18 +64,6 @@ def euclidean_dot(x, y):
 def minkowski_dot(x, y):
     axes = len(x.shape) - 1, len(y.shape) -1
     return K.batch_dot(x[...,:-1], y[...,:-1], axes=axes) - K.batch_dot(x[...,-1:], y[...,-1:], axes=axes)
-
-# def minkowski_dot_2d(x, y):
-# 	# axes = len(x.shape) - 1, len(y.shape) -1
-# 	return K.dot( x[...,:-1], K.transpose(y[...,:-1])) - K.dot(x[...,-1:], K.transpose(y[...,-1:]))
-
-# def hyperbolic_distance(x, y):
-# 	inner_uv = minkowski_dot_2d(x, y)
-# 	inner_uv = -inner_uv - 1. + 1e-7
-# 	# inner_uv = K.maximum(inner_uv, K.epsilon()) # clip to avoid nan
-
-# 	d_uv = tf.acosh(1. + inner_uv)
-# 	return d_uv
 
 def hyperboloid_initializer(shape, r_max=1e-3):
 
@@ -133,14 +121,14 @@ class HyperboloidEmbeddingLayer(Layer):
 class ExponentialMappingOptimizer(optimizer.Optimizer):
 	
 	def __init__(self, 
-		learning_rate=0.1, 
+		lr=0.1, 
 		use_locking=False,
 		name="ExponentialMappingOptimizer"):
 		super(ExponentialMappingOptimizer, self).__init__(use_locking, name)
-		self._lr = learning_rate
+		self.lr = lr
 
 	def _prepare(self):
-		self._lr_t = ops.convert_to_tensor(self._lr, name="learning_rate", dtype=K.floatx())
+		self._lr_t = ops.convert_to_tensor(self.lr, name="learning_rate", dtype=K.floatx())
 
 	def _apply_dense(self, grad, var):
 		lr_t = math_ops.cast(self._lr_t, var.dtype.base_dtype)
@@ -178,9 +166,9 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 	def exponential_mapping( self, p, x ):
 
 		def normalise_to_hyperboloid(x):
-			return x / K.sqrt(-minkowski_dot(x, x))
+			return x / K.sqrt( -minkowski_dot(x, x) )
 
-		norm_x = K.sqrt( minkowski_dot(x, x) ) 
+		norm_x = K.sqrt( K.maximum(np.float64(0.), minkowski_dot(x, x) ) ) 
 		####################################################
 		# exp_map_p = tf.cosh(norm_x) * p
 		
@@ -289,26 +277,31 @@ def configure_paths(args):
 	build directories on local system for output of model after each epoch
 	'''
 
-	directory = os.path.join("alpha={:.02f}".format(args.alpha),
-		"seed={:03d}".format(args.seed))
+	if args.no_walks:
+		directory = os.path.join("no_walks",
+			"seed={:03d}".format(args.seed))
+	else:
+		directory = os.path.join("alpha={:.02f}".format(args.alpha),
+			"seed={:03d}".format(args.seed))
 	
 	args.walk_path = os.path.join(args.walk_path, directory)
 	args.embedding_path = os.path.join(args.embedding_path, directory, "dim={:03d}".format(args.embedding_dim) )
 
 	# assert os.path.exists(args.walk_path)
-	if not os.path.exists(args.walk_path):
-		os.makedirs(args.walk_path)
-		print ("making {}".format(args.walk_path))
-	print ("saving walks to {}".format(args.walk_path))
+	if not args.no_walks:
+		if not os.path.exists(args.walk_path):
+			os.makedirs(args.walk_path)
+			print ("making {}".format(args.walk_path))
+		print ("saving walks to {}".format(args.walk_path))
+		# walk filename 
+		args.walk_filename = os.path.join(args.walk_path, "num_walks={}-walk_len={}-p={}-q={}.walk".format(args.num_walks, 
+					args.walk_length, args.p, args.q))
 
 	if not os.path.exists(args.embedding_path):
 		os.makedirs(args.embedding_path)
 		print ("making {}".format(args.embedding_path))
 	print ("saving embedding to {}".format(args.embedding_path))
 
-	# walk filename 
-	args.walk_filename = os.path.join(args.walk_path, "num_walks={}-walk_len={}-p={}-q={}.walk".format(args.num_walks, 
-				args.walk_length, args.p, args.q))
 	# embedding filename
 	args.embedding_filename = os.path.join(args.embedding_path, "embedding.csv")
 	
@@ -344,7 +337,7 @@ def main():
 	num_nodes = len(graph)
 	model, initial_epoch = build_model(num_nodes, args)
 
-	optimizer = ExponentialMappingOptimizer(learning_rate=args.lr)
+	optimizer = ExponentialMappingOptimizer(lr=args.lr)
 	loss = hyperbolic_softmax_loss(sigma=args.sigma)
 	model.compile(optimizer=optimizer, 
 		loss=loss, 
@@ -383,8 +376,6 @@ def main():
 				args.num_negative_samples, 
 				alias_dict)
 		train_y = np.zeros([len(train_x), 1, 1], dtype=int )
-		# train_y = np.zeros([len(train_x), args.num_negative_samples + 1, 1], )
-		# train_y[:,0] = 1
 
 		model.fit(train_x, train_y, 
 			shuffle=True,

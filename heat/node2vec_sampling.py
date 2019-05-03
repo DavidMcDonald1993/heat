@@ -42,7 +42,7 @@ class Graph():
 			if (feature_sim is not None 
 				and self.alpha > 0 
 				and not (feature_sim[cur]<1e-15).all() 
-				and (np.random.rand() < self.alpha or len(cur_nbrs) == 0)):
+				and (np.random.rand() < self.alpha or False)): #len(cur_nbrs) == 0)):
 				# random jump based on attribute similarity
 				next_ = np.random.choice(len(feature_sim), replace=False, p=feature_sim[cur])
 				walk.append(next_)
