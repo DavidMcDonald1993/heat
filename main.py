@@ -363,6 +363,7 @@ def main():
 			max_queue_size=100, 
 			use_multiprocessing=args.workers>0, 
 			epochs=args.num_epochs, 
+			steps_per_epoch=len(training_generator),
 			initial_epoch=initial_epoch, 
 			verbose=args.verbose,
 			callbacks=callbacks
