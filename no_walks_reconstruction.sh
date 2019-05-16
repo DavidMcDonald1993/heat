@@ -28,7 +28,7 @@ do
 			)
 
 			cmd=$(echo python ${heat} --edgelist ${edgelist} --features ${features} --labels ${labels} \
-			--embedding ${embedding_dir} --no-walks --seed ${seed} --dim ${dim} -e 1500 --use-generator)
+			--embedding ${embedding_dir} --no-walks --seed ${seed} --dim ${dim} -e 1500 --nneg 50)
 
 			slurm_options=$(echo \
 			--job-name=performEmbeddingsNC-${dataset}-${dim}-${seed}-no-walks\

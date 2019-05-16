@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import h5py
 import multiprocessing 
 import re
@@ -11,6 +12,7 @@ import random
 import numpy as np
 import networkx as nx
 import pandas as pd
+import glob
 
 from scipy.sparse import identity
 import matplotlib.pyplot as plt
@@ -27,11 +29,12 @@ from tensorflow.python.framework import ops
 from tensorflow.python.ops import math_ops, control_flow_ops
 from tensorflow.python.training import optimizer
 
-from heat.utils import build_training_samples, hyperboloid_to_poincare_ball, load_data
+from heat.utils import build_training_samples, hyperboloid_to_poincare_ball, load_data, load_embedding
 from heat.utils import perform_walks, determine_positive_and_negative_samples
 from heat.losses import  hyperbolic_softmax_loss, hyperbolic_sigmoid_loss, hyperbolic_hypersphere_loss
 from heat.generators import TrainingDataGenerator
-from heat.visualise import draw_graph
+from heat.visualise import draw_graph, plot_degree_dist
+from heat.callbacks import Checkpointer
 
 K.set_floatx("float64")
 K.set_epsilon(1e-15)
@@ -105,13 +108,13 @@ class HyperboloidEmbeddingLayer(Layer):
 
 	def call(self, idx):
 
-		# embedding = tf.gather(self.embedding, idx)
-		embedding = tf.nn.embedding_lookup(self.embedding, idx)
+		embedding = tf.gather(self.embedding, idx)
+		# embedding = tf.nn.embedding_lookup(self.embedding, idx)
 
 		return embedding
 
 	def compute_output_shape(self, input_shape):
-		return (input_shape[0], input_shape[1], self.embedding_dim+1)
+		return (input_shape[0], input_shape[1], self.embedding_dim + 1)
 	
 	def get_config(self):
 		base_config = super(HyperboloidEmbeddingLayer, self).get_config()
@@ -127,18 +130,18 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		super(ExponentialMappingOptimizer, self).__init__(use_locking, name)
 		self.lr = lr
 
-	def _prepare(self):
-		self._lr_t = ops.convert_to_tensor(self.lr, name="learning_rate", dtype=K.floatx())
+	# def _prepare(self):
+	# 	self._lr_t = ops.convert_to_tensor(self.lr, name="learning_rate", dtype=K.floatx())
 
 	def _apply_dense(self, grad, var):
-		lr_t = math_ops.cast(self._lr_t, var.dtype.base_dtype)
+		# lr_t = math_ops.cast(self.lr, var.dtype.base_dtype)
 		spacial_grad = grad[:,:-1]
 		t_grad = -1 * grad[:,-1:]
 		
 		ambient_grad = tf.concat([spacial_grad, t_grad], axis=-1)
 		tangent_grad = self.project_onto_tangent_space(var, ambient_grad)
 		
-		exp_map = self.exponential_mapping(var, - lr_t * tangent_grad)
+		exp_map = self.exponential_mapping(var, - self.lr * tangent_grad)
 		
 		return tf.assign(var, exp_map)
 		
@@ -146,17 +149,17 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		indices = grad.indices
 		values = grad.values
 
-		# p = tf.gather(var, indices, name="gather_apply_sparse")
-		p = tf.nn.embedding_lookup(var, indices)
+		p = tf.gather(var, indices, name="gather_apply_sparse")
+		# p = tf.nn.embedding_lookup(var, indices)
 
-		lr_t = math_ops.cast(self._lr_t, var.dtype.base_dtype)
+		# lr_t = math_ops.cast(self.lr, var.dtype.base_dtype)
 		spacial_grad = values[:, :-1]
 		t_grad = -values[:, -1:]
 
 		ambient_grad = tf.concat([spacial_grad, t_grad], axis=-1, name="optimizer_concat")
 
 		tangent_grad = self.project_onto_tangent_space(p, ambient_grad)
-		exp_map = self.exponential_mapping(p, - lr_t * tangent_grad)
+		exp_map = self.exponential_mapping(p, - self.lr * tangent_grad)
 
 		return tf.scatter_update(ref=var, indices=indices, updates=exp_map, name="scatter_update")
 	
@@ -170,20 +173,20 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 
 		norm_x = K.sqrt( K.maximum(np.float64(0.), minkowski_dot(x, x) ) ) 
 		####################################################
-		# exp_map_p = tf.cosh(norm_x) * p
+		exp_map_p = tf.cosh(norm_x) * p
 		
-		# idx = tf.cast( tf.where(norm_x > K.cast(0., K.floatx()), )[:,0], tf.int64)
-		# non_zero_norm = tf.gather(norm_x, idx)
-		# z = tf.gather(x, idx) / non_zero_norm
+		idx = tf.cast( tf.where(norm_x > K.cast(0., K.floatx()), )[:,0], tf.int64)
+		non_zero_norm = tf.gather(norm_x, idx)
+		z = tf.gather(x, idx) / non_zero_norm
 
-		# updates = tf.sinh(non_zero_norm) * z
-		# dense_shape = tf.cast( tf.shape(p), tf.int64)
-		# exp_map_x = tf.scatter_nd(indices=idx[:,None], updates=updates, shape=dense_shape)
+		updates = tf.sinh(non_zero_norm) * z
+		dense_shape = tf.cast( tf.shape(p), tf.int64)
+		exp_map_x = tf.scatter_nd(indices=idx[:,None], updates=updates, shape=dense_shape)
 		
-		# exp_map = exp_map_p + exp_map_x 
+		exp_map = exp_map_p + exp_map_x 
 		#####################################################
-		z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
-		exp_map = tf.cosh(norm_x) * p + tf.sinh(norm_x) * z
+		# z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
+		# exp_map = tf.cosh(norm_x) * p + tf.sinh(norm_x) * z
 		#####################################################
 		exp_map = normalise_to_hyperboloid(exp_map) # account for floating point imprecision
 
@@ -197,7 +200,17 @@ def build_model(num_nodes, args):
 	y = HyperboloidEmbeddingLayer(num_nodes, args.embedding_dim, name="embedding_layer")(x)
 	model = Model(x, y)
 
-	initial_epoch = 0
+	previous_models = sorted(glob.glob(os.path.join(args.embedding_path, "*.csv")))
+	if len(previous_models) > 0:
+		model_file = previous_models[-1]
+		initial_epoch = int(model_file.split("/")[-1].split("_")[0])
+		print ("previous models found in directory -- loading from file {} and resuming from epoch {}".format(model_file, initial_epoch))
+		embedding_df = load_embedding(model_file)
+		embedding = embedding_df.reindex(range(num_nodes)).values
+		model.layers[-1].set_weights([embedding])
+	else:
+		print ("no previous model found in {}".format(args.embedding_path))
+		initial_epoch = 0
 
 	return model, initial_epoch
 
@@ -216,7 +229,7 @@ def parse_args():
 
 	parser.add_argument("--seed", dest="seed", type=int, default=0,
 		help="Random seed (default is 0).")
-	parser.add_argument("--lr", dest="lr", type=float, default=3e-1,
+	parser.add_argument("--lr", dest="lr", type=np.float64, default=3e-1,
 		help="Learning rate (default is 3e-1).")
 
 	parser.add_argument("-e", "--num_epochs", dest="num_epochs", type=int, default=5,
@@ -227,8 +240,8 @@ def parse_args():
 		help="Number of negative samples for training (default is 10).")
 	parser.add_argument("--context-size", dest="context_size", type=int, default=3,
 		help="Context size for generating positive samples (default is 3).")
-	parser.add_argument("--patience", dest="patience", type=int, default=300,
-		help="The number of epochs of no improvement in loss before training is stopped. (Default is 300)")
+	parser.add_argument("--patience", dest="patience", type=int, default=10,
+		help="The number of epochs of no improvement in loss before training is stopped. (Default is 10)")
 
 	parser.add_argument("-d", "--dim", dest="embedding_dim", type=int,
 		help="Dimension of embeddings for each layer (default is 2).", default=2)
@@ -253,11 +266,11 @@ def parse_args():
 	parser.add_argument('--workers', dest="workers", type=int, default=2, 
 		help="Number of worker threads to generate training patterns (default is 2).")
 
-	parser.add_argument("--walks", dest="walk_path", default="walks/cora_ml", 
-		help="path to save random walks (default is 'walks/cora_ml)'.")
+	parser.add_argument("--walks", dest="walk_path", default=None, 
+		help="path to save random walks.")
 
-	parser.add_argument("--embedding", dest="embedding_path", default="embeddings/cora_ml", 
-		help="path to save embedings (default is 'embeddings/cora_ml/)'.")
+	parser.add_argument("--embedding", dest="embedding_path", default=None, 
+		help="path to save embedings.")
 
 	parser.add_argument('--directed', action="store_true", help='flag to train on directed graph')
 
@@ -284,11 +297,11 @@ def configure_paths(args):
 		directory = os.path.join("alpha={:.02f}".format(args.alpha),
 			"seed={:03d}".format(args.seed))
 	
-	args.walk_path = os.path.join(args.walk_path, directory)
 	args.embedding_path = os.path.join(args.embedding_path, directory, "dim={:03d}".format(args.embedding_dim) )
 
 	# assert os.path.exists(args.walk_path)
 	if not args.no_walks:
+		args.walk_path = os.path.join(args.walk_path, directory)
 		if not os.path.exists(args.walk_path):
 			os.makedirs(args.walk_path)
 			print ("making {}".format(args.walk_path))
@@ -310,6 +323,9 @@ def main():
 	args = parse_args()
 
 	assert not (args.visualise and args.embedding_dim > 2), "Can only visualise two dimensions"
+	assert args.embedding_path is not None, "you must specify a path to save embedding"
+	if not args.no_walks:
+		assert args.walk_path is not None, "you must specify a path to save walks"
 
 	random.seed(args.seed)
 	np.random.seed(args.seed)
@@ -317,6 +333,9 @@ def main():
 
 	graph, features, node_labels = load_data(args)
 	print ("Loaded dataset")
+
+	if False:
+		plot_degree_dist(graph, "degree distribution")
 
 	configure_paths(args)
 
@@ -341,21 +360,24 @@ def main():
 	loss = hyperbolic_softmax_loss(sigma=args.sigma)
 	model.compile(optimizer=optimizer, 
 		loss=loss, 
-		target_tensors=[tf.placeholder(dtype=np.int32)])
+		target_tensors=[tf.placeholder(dtype=tf.int32)])
 	model.summary()
 
-	callbacks = [EarlyStopping(monitor="loss", patience=args.patience, verbose=True)]			
+	callbacks = [
+		TerminateOnNaN(),
+		EarlyStopping(monitor="loss", patience=args.patience, verbose=True),
+		Checkpointer(epoch=initial_epoch, nodes=sorted(graph.nodes()), embedding_directory=args.embedding_path)
+	]			
 
-	positive_samples, negative_samples, alias_dict =\
+	positive_samples, negative_samples, probs =\
 			determine_positive_and_negative_samples(graph, features, args)
-
-	random.shuffle(positive_samples)
 
 	if args.use_generator:
 		print ("Training with data generator with {} worker threads".format(args.workers))
 		training_generator = TrainingDataGenerator(positive_samples,  
-				negative_samples, 
-				alias_dict, 
+				# negative_samples, 
+				# alias_dict, 
+				probs,
 				args)
 
 		model.fit_generator(training_generator, 
@@ -372,11 +394,12 @@ def main():
 	else:
 		print ("Training without data generator")
 
-		train_x = build_training_samples(np.array(positive_samples), 
-				negative_samples,
-				args.num_negative_samples, 
-				alias_dict)
-		train_y = np.zeros([len(train_x), 1, 1], dtype=int )
+		# train_x = build_training_samples(np.array(positive_samples), 
+				# negative_samples,
+				# args.num_negative_samples, 
+				# alias_dict)
+		train_x = np.append(positive_samples, negative_samples, axis=-1)
+		train_y = np.zeros([len(train_x), 1, 1], dtype=np.int32 )
 
 		model.fit(train_x, train_y, 
 			shuffle=True,
@@ -388,15 +411,11 @@ def main():
 		)
 
 	embedding = model.get_weights()[-1]
-	print ("Training complete, saving embedding to {}".format(args.embedding_filename))
-
-	embedding_df = pd.DataFrame(embedding, index=sorted(graph.nodes()))
-	embedding_df.to_csv(args.embedding_filename)
 
 	if args.visualise:
 		embedding = hyperboloid_to_poincare_ball(embedding)
 		draw_graph(undirected_edges if not args.directed else directed_edges, 
-			embedding, node_labels, path="2d-poincare-visualisation.png")
+			embedding, node_labels, path="2d-poincare-disk-visualisation.png")
 
 if __name__ == "__main__":
 	main()

@@ -29,7 +29,7 @@ do
 			)
 
 			cmd=$(echo python ${heat} --edgelist ${edgelist} --features ${features} --labels ${labels} \
-			--embedding ${embedding_dir} --walks ${walks_dir} --seed ${seed} --dim ${dim})
+			--embedding ${embedding_dir} --walks ${walks_dir} --seed ${seed} --dim ${dim} -e 5)
 				
 			for alpha in 00 05 10 20 50 80
 			do
@@ -91,7 +91,7 @@ do
 			)
 
 			cmd=$(echo python ${heat} --edgelist ${edgelist} --features ${features} --labels ${labels} \
-			--embedding ${embedding_dir} --walks ${walks_dir} --seed ${seed} --dim ${dim})
+			--embedding ${embedding_dir} --walks ${walks_dir} --seed ${seed} --dim ${dim} -e 5)
 				
 			for alpha in 00 05 10 20 50 80
 			do

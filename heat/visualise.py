@@ -107,39 +107,14 @@ def draw_geodesic(a, b, c, ax, c1=None, c2=None, verbose=False, width=.05):
     coordsB = "data"
 
     for ma_, a_, b_, c_, cent_, radius_, theta1_, theta2_ in zip(mask_, a, b, c, cent, radius, theta1, theta2):
-        # if np.random.rand() > .05:
-        #     continue
         if ma_:
-        # if True:
             e = patches.ConnectionPatch(a_, b_, coordsA, coordsB, 
                 linewidth=width, 
                 zorder=0, 
-                # arrowstyle="Simple,tail_width=.01,head_width=.6,head_length=1.", 
-                # fc="k"
                 )
-            # e = patches.FancyArrowPatch(a_, b_, arrowstyle="Simple,tail_width=0.05,head_width=4,head_length=8", 
-            #     color="k", zorder=0, alpha=.4, fc="r")
         else:
             e = patches.Arc((cent_[0], cent_[1]), 2*radius_, 2*radius_,
                              theta1=theta1_, theta2=theta2_, linewidth=width, fill=False, zorder=0)
-            # armA = np.linalg.norm(a_ - c_)
-            # c_prime = c_ - a_
-            # a_prime = np.array([c_prime[0], 0])
-            # angleA = np.arccos( (c_prime).dot(a_prime) / (np.linalg.norm(c_prime) * np.linalg.norm(a_prime)) )
-            # armB = np.linalg.norm(b_ - c_)
-            # c_prime = c_ - b_
-            # b_prime = np.array([c_prime[0], 0])
-            # angleB = np.arccos( (c_prime).dot(b_prime) / (np.linalg.norm(c_prime) * np.linalg.norm(b_prime)) )
-            # e = patches.FancyArrowPatch(a_, b_, 
-            #     arrowstyle="Simple,tail_width=.01,head_width=.6,head_length=1.", 
-            #     # arrowstyle="CurveB,head_length=0.4,head_width=0.2",
-            #     # arrowstyle=ArrowStyle("->", head_length=0.4, head_width=0.2),
-            #     color="k", 
-            #     # connectionstyle="arc,armA={},angleA={}".format(armA, np.rad2deg(angleA)), 
-            #     connectionstyle="arc,armA={},angleA={},armB={},angleB={}".format(armA, np.rad2deg(angleA), armB, np.rad2deg(angleB)), 
-            #     zorder=0, 
-            #     alpha=.4, 
-            #     fc="k")
         ax.add_patch(e)
 
 def draw_graph(edges, embedding, labels, path, s=25):
@@ -164,29 +139,33 @@ def draw_graph(edges, embedding, labels, path, s=25):
     
     draw_geodesic(a, b, c, ax)
 
-    # if labels is not None and len(labels.shape) == 2:
-    #     core_nodes = labels[:,1].astype(np.bool)
-    #     ax.scatter(embedding[core_nodes,0], embedding[core_nodes,1], 
-    #         c=["r" if l==0 else "g" if l==1 else "b" for l in labels[core_nodes,0]],
-    #         marker="o",
-    #         s=s, zorder=2)
-    #     ax.scatter(embedding[~core_nodes,0], embedding[~core_nodes,1], 
-    #         c=["r" if l==0 else "g" if l==1 else "b" for l in labels[~core_nodes,0]],
-    #         marker="X",
-    #         s=s, zorder=2)
-    # else:
+    if labels is not None:
+        num_labels = max(set(labels[:,0])) + 1
+        colours = np.random.rand(num_labels, 3)
+
     ax.scatter(embedding[:,0], embedding[:,1], 
-        c=labels[:,0] if labels is not None else None,
+        c=colours[labels[:,0]] if labels is not None else None,
         s=s, zorder=2)
 
     plt.savefig(path)
     plt.close()
 
-def plot_degree_dist(title, graph, ax):
-    degrees = sorted(graph.degree().values())
+def plot_degree_dist(graph, title):
+
+    fig = plt.figure()
+    # plt.suptitle(title)
+    
+    ax = fig.add_subplot(111)
+
+    degrees = sorted(dict(graph.degree()).values())
+
     deg, counts = zip(*collections.Counter(degrees).items())
     deg = np.array(deg)
     counts = np.array(counts)
+
+    idx = deg > 0
+    deg = deg[idx]
+    counts = counts[idx]
 
     m, c = np.polyfit(np.log(deg), np.log(counts), 1)
     y_fit = np.exp(m*np.log(deg) + c)
@@ -195,3 +174,4 @@ def plot_degree_dist(title, graph, ax):
     ax.plot(deg, y_fit, ':', c="r")
     ax.set(title=title, xscale="log", yscale="log", xlabel="Connections", ylabel="Frequency",)
     ax.set_ylim(bottom=.9)
+    plt.show()

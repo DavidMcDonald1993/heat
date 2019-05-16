@@ -7,6 +7,7 @@ import numpy as np
 import networkx as nx
 
 import random
+# import bisect
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
@@ -18,6 +19,10 @@ import pickle as pkl
 from .node2vec_sampling import Graph 
 
 from multiprocessing.pool import Pool 
+
+import matplotlib.pyplot as plt
+
+from collections import Counter
 
 
 def load_data(args):
@@ -154,26 +159,36 @@ def convert_edgelist_to_dict(edgelist, undirected=True, self_edges=False):
 	return edge_dict
 
 def get_training_sample(samples, num_negative_samples, ):
-	positive_sample_pair, negative_samples, probs = samples
-	negative_samples_ = negative_samples[alias_draw(probs[0], probs[1], num_negative_samples)]
+	positive_sample_pair, probs = samples
+	# negative_samples_ = negative_samples[alias_draw(probs[0], probs[1], num_negative_samples)]
+	negative_samples_ = np.random.choice(len(probs), replace=True, size=num_negative_samples, p=probs)
 	return np.append(positive_sample_pair, negative_samples_, )
 
 def build_training_samples(positive_samples, negative_samples, num_negative_samples, alias_dict):
 	input_nodes = positive_samples[:,0]
 	print ("Building training samples")
+	N = len(alias_dict)
+
+	# batch_negative_samples = np.array([
+	# 	np.random.choice(N, replace=True, size=num_negative_samples, p=probs)
+	# 	for probs in (alias_dict[u] for u in input_nodes)
+	# ], dtype=np.int64)
+	# batch_nodes = np.append(positive_samples, batch_negative_samples, axis=1)
+	# return batch_nodes
 
 	# batch_negative_samples = np.array([
 	# 	negative_samples[u][alias_draw(alias_dict[u][0], alias_dict[u][1], num_negative_samples)]
 	# 	for u in input_nodes
 	# ], dtype=np.int64)
-	# batch_nodes = np.append(batch_positive_samples, batch_negative_samples, axis=1)
+	# batch_nodes = np.append(positive_samples, batch_negative_samples, axis=1)
 	# return batch_nodes
-	with Pool(processes=None) as p:
+	
+	with Pool(processes=2) as p:
 		training_samples = p.map(functools.partial(get_training_sample,
 			num_negative_samples=num_negative_samples,
 			),
 			zip(positive_samples,
-				(negative_samples[u] for u in input_nodes),
+				# (negative_samples[u] for u in input_nodes),
 				(alias_dict[u] for u in input_nodes)))
 	return np.array(training_samples)
 
@@ -200,6 +215,10 @@ def create_feature_graph(features, args):
 
 	return feature_graph
 
+# def determine_negative_samples(positive_samples, nodes):
+# 	n, all_positive_samples = positive_samples
+# 	return n, np.array(sorted(nodes.difference(all_positive_samples)))
+
 def determine_positive_and_negative_samples(graph, features, args):
 
 	nodes = graph.nodes()
@@ -207,75 +226,130 @@ def determine_positive_and_negative_samples(graph, features, args):
 	if not isinstance(nodes, set):
 		nodes = set(nodes)
 
-	if args.no_walks:
+	def determine_positive_samples_and_probs(graph, features, args):
 
-		print ("using only edges as positive samples")
+		if args.no_walks:
 
-		positive_samples = list(graph.edges())
-		positive_samples += [(v, u) for (u, v) in positive_samples]
+			print ("using only edges as positive samples")
 
-		all_positive_samples = {n: set(graph.neighbors(n)) for n in sorted(nodes)}
+			positive_samples = list(graph.edges())
+			positive_samples += [(v, u) for (u, v) in positive_samples]
 
-		counts = np.array([graph.degree(n) for n in sorted(nodes)])
+			all_positive_samples = {n: set([n] + list(graph.neighbors(n))) for n in sorted(nodes)}
 
+			counts = np.array([graph.degree(n) for n in sorted(nodes)])
+
+		else:
+
+			print ("determining positive and negative samples using random walks")
+
+			walks = perform_walks(graph, features, args)
+
+			context_size = args.context_size
+			directed = args.directed
+			
+			all_positive_samples = {n: {n} for n in sorted(nodes)}
+
+			positive_samples = []
+
+			counts = {n: 0. for n in sorted(nodes)}
+
+			for num_walk, walk in enumerate(walks):
+				for i in range(len(walk)):
+					u = walk[i]
+					counts[u] += 1	
+					for j in range(context_size):
+						if i+j+1 >= len(walk):
+							break
+						v = walk[i+j+1]
+						if u == v:
+							continue
+
+						positive_samples.append((u, v))
+						positive_samples.append((v, u))
+
+						# bisect.insort_left(positive_samples, (u, v))
+						# bisect.insort_left(positive_samples, (v, u))
+
+						all_positive_samples[u].add(v)
+						all_positive_samples[v].add(u)
+
+				if num_walk % 1000 == 0:  
+					print ("processed walk {:04d}/{}".format(num_walk, len(walks)))
+
+			counts = np.array([counts[n] for n in sorted(nodes)])
+
+		print ("DETERMINING NEGATIVE SAMPLE PROBS")
+
+		negative_samples = np.ones((len(nodes), len(nodes)))
+		for n in sorted(nodes):
+			negative_samples[n,positive_samples[n]] = 0
+
+		# with Pool(processes=None) as p:
+		# 	negative_samples = p.map(functools.partial(determine_negative_samples, nodes=nodes), 
+		# 		((n, all_positive_samples[n]) for n in sorted(nodes)))
+		# negative_samples = {n: s for n, s in negative_samples}
+		# # negative_samples = {n: np.array(sorted(nodes.difference(all_positive_samples[n]))) for n in sorted(nodes)}
+		# for u, neg_samples in negative_samples.items():
+		# 	assert len(neg_samples) > 0, "node {} does not have any negative samples".format(u)
+		# 	# print ("node {} has {} negative samples".format(u, len(neg_samples)))
+
+		print ("DETERMINED POSITIVE AND NEGATIVE SAMPLES")
+		print ("found {} positive sample pairs".format(len(positive_samples)))
+
+		counts = counts ** 0.75
+		probs = counts[None, :] 
+
+		probs = probs * negative_samples
+		probs /= probs.sum(axis=-1, keepdims=True)
+
+		# # prob_dict = {n: probs[negative_samples[n]] for n in sorted(nodes)}
+		# # prob_dict = {n: p / p.sum() for n, p in prob_dict.items()}
+		# prob_dict = {n: probs[n] for n in sorted(nodes)}
+		# print ("PREPROCESSING NEGATIVE SAMPLE PROBABILTIES")
+
+		# with Pool(processes=None) as p:
+		# 	alias_dict = p.map(alias_setup, prob_dict.items())
+
+		# alias_dict = {n: p for n, p in alias_dict}
+		probs = probs.cumsum(-1)
+
+		print ("PREPROCESSED NEGATIVE SAMPLE PROBABILTIES")
+
+		return positive_samples, probs
+
+	def select_negative_samples(positive_samples, probs):
+
+		print ("SORTING POSITIVE SAMPLES")
+		positive_samples = np.array(sorted(positive_samples), dtype=np.int32)
+		print ("SORTED POSITIVE SAMPLES")
+
+		with Pool(processes=None) as p:
+			negative_samples = p.map(functools.partial(choose_negative_samples,
+			num_negative_samples=args.num_negative_samples), 
+			((u, count, probs[u]) for u, count in  Counter(positive_samples[:,0]).items()))
+
+		negative_samples = np.concatenate([arr for _, arr in sorted(negative_samples, key=lambda x: x[0])], axis=0,)
+
+		return negative_samples
+
+	positive_samples, probs = determine_positive_samples_and_probs(graph, features, args)
+
+	if not args.use_generator:
+		print("trianing without generator -- selecting negative samples before training")
+		negative_samples = select_negative_samples(positive_samples, probs)
+		probs = None
 	else:
+		print ("training with generator -- skipping selecting negative samples")
+		negative_samples = None 
 
-		print ("determining positive and negative samples using random walks")
 
-		walks = perform_walks(graph, features, args)
+	return positive_samples, negative_samples, probs# negative_samples, alias_dict
 
-		context_size = args.context_size
-		directed = False
-		
-		all_positive_samples = {n: set() for n in sorted(nodes)}
-
-		positive_samples = []
-
-		counts = {n: 0. for n in sorted(nodes)}
-
-		for num_walk, walk in enumerate(walks):
-			for i in range(len(walk)):
-				u = walk[i]
-				counts[u] += 1	
-				for j in range(context_size):
-					if i+j+1 >= len(walk):
-						break
-					v = walk[i+j+1]
-					if u == v:
-						continue
-					positive_samples.append((u, v))
-					positive_samples.append((v, u))
-
-					all_positive_samples[u].add(v)
-					all_positive_samples[v].add(u)
-
-			if num_walk % 1000 == 0:  
-				print ("processed walk {:04d}/{}".format(num_walk, len(walks)))
-
-		counts = np.array([counts[n] for n in sorted(nodes)])
-
-	negative_samples = {n: np.array(sorted(nodes.difference(all_positive_samples[n]))) for n in sorted(nodes)}
-	for u, neg_samples in negative_samples.items():
-		assert len(neg_samples) > 0, "node {} does not have any negative samples".format(u)
-		# print ("node {} has {} negative samples".format(u, len(neg_samples)))
-
-	print ("DETERMINED POSITIVE AND NEGATIVE SAMPLES")
-	print ("found {} positive sample pairs".format(len(positive_samples)))
-
-	counts = counts ** 0.75
-	probs = counts 
-
-	prob_dict = {n: probs[negative_samples[n]] for n in sorted(nodes)}
-	prob_dict = {n: p / p.sum() for n, p in prob_dict.items()}
-
-	with Pool(processes=None) as p:
-		alias_dict = p.map(alias_setup, prob_dict.items())
-
-	alias_dict = {n: p for n, p in alias_dict}
-
-	print ("PREPROCESSED NEGATIVE SAMPLE PROBS")
-
-	return positive_samples, negative_samples, alias_dict
+def choose_negative_samples(x, num_negative_samples):
+		u, count, probs = x
+		# return u, np.random.multinomial(1, probs, size=(count, num_negative_samples)).argmax(-1)
+		return u, np.searchsorted(probs, np.random.rand(count, num_negative_samples)).astype(np.int32)
 
 def perform_walks(graph, features, args):
 
@@ -284,7 +358,7 @@ def perform_walks(graph, features, args):
 			for walk in walks:
 				f.write(",".join([str(n) for n in walk]) + "\n")
 
-	def load_walks_from_file(walk_file, walk_length):
+	def load_walks_from_file(walk_file, ):
 
 		walks = []
 
@@ -328,7 +402,7 @@ def perform_walks(graph, features, args):
 
 	else:
 		print ("loading walks from {}".format(walk_file))
-		walks = load_walks_from_file(walk_file, args.walk_length)
+		walks = load_walks_from_file(walk_file, )
 	return walks
 
 def lock_method(lock_filename):

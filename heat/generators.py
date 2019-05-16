@@ -8,33 +8,36 @@ from keras.utils import Sequence
 
 class TrainingDataGenerator(Sequence):
 
-	def __init__(self, positive_samples, negative_samples, alias_dict, args):
+	def __init__(self, positive_samples, probs, args):
 		assert isinstance(positive_samples, list)
 		self.positive_samples = positive_samples
-		self.negative_samples = negative_samples
-		self.alias_dict = alias_dict
+		# self.negative_samples = negative_samples
+		# self.alias_dict = alias_dict
+		self.probs = probs
 		self.batch_size = args.batch_size
 		self.num_negative_samples = args.num_negative_samples
 
-	def alias_draw(self, J, q, size=1):
-	    '''
-	    Draw sample from a non-uniform discrete distribution using alias sampling.
-	    '''
-	    K = len(J)
-	    kk = np.floor(np.random.uniform(high=K, size=size)).astype(np.int)
-	    r = np.random.uniform(size=size)
-	    idx = r >= q[kk]
-	    kk[idx] = J[kk[idx]]
-	    return kk
+	# def alias_draw(self, J, q, size=1):
+	#     '''
+	#     Draw sample from a non-uniform discrete distribution using alias sampling.
+	#     '''
+	#     K = len(J)
+	#     kk = np.floor(np.random.uniform(high=K, size=size)).astype(np.int)
+	#     r = np.random.uniform(size=size)
+	#     idx = r >= q[kk]
+	#     kk[idx] = J[kk[idx]]
+	    # return kk
 
 	def get_training_sample(self, batch_positive_samples):
-		negative_samples = self.negative_samples
+		# negative_samples = self.negative_samples
 		num_negative_samples = self.num_negative_samples
-		alias_dict = self.alias_dict
+		probs = self.probs
 		
 		input_nodes = batch_positive_samples[:,0]
 		batch_negative_samples = np.array([
-			negative_samples[u][self.alias_draw(alias_dict[u][0], alias_dict[u][1], size=num_negative_samples)]
+			np.searchsorted(probs[u], np.random.rand(num_negative_samples))
+			# negative_samples[u][self.alias_draw(alias_dict[u][0], alias_dict[u][1], size=num_negative_samples)]
+
 			for u in input_nodes
 		], dtype=np.int32)
 
@@ -52,8 +55,7 @@ class TrainingDataGenerator(Sequence):
 			positive_samples[batch_idx * batch_size : (batch_idx + 1) * batch_size], dtype=np.int32)
 		training_sample = self.get_training_sample(batch_positive_samples)
 		
-		target = np.zeros((training_sample.shape[0], 1, 1))
-		# target = np.zeros((training_sample.shape[0],  self.num_negative_samples + 1, 1))
+		target = np.zeros((training_sample.shape[0], 1, 1), dtype=np.int32)
 		
 		return training_sample, target
 

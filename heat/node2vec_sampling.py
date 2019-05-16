@@ -31,6 +31,7 @@ class Graph():
 		feature_sim = self.feature_sim
 
 		jump = False
+		preprocessed_edges = alias_edges is not None
 
 		walk = [start_node]
 
@@ -42,14 +43,14 @@ class Graph():
 			if (feature_sim is not None 
 				and self.alpha > 0 
 				and not (feature_sim[cur]<1e-15).all() 
-				and (np.random.rand() < self.alpha or False)): #len(cur_nbrs) == 0)):
+				and (np.random.rand() < self.alpha or len(cur_nbrs) == 0)):
 				# random jump based on attribute similarity
 				next_ = np.random.choice(len(feature_sim), replace=False, p=feature_sim[cur])
 				walk.append(next_)
 				jump = True
 
 			elif len(cur_nbrs) > 0:
-				if len(walk) == 1 or jump:
+				if len(walk) == 1 or jump or not preprocessed_edges:
 					walk.append(cur_nbrs[alias_draw(alias_nodes[cur][0], alias_nodes[cur][1])])
 				else:
 					prev = walk[-2]
@@ -130,8 +131,7 @@ class Graph():
 		graph = self.graph
 		is_directed = self.is_directed
 
-		alias_nodes = {}
-		i = 0
+		# alias_nodes = {}
 
 		print ("preprocessing nodes")
 
@@ -139,47 +139,24 @@ class Graph():
 			alias_nodes = p.map(self.get_alias_node, graph.nodes())
 		alias_nodes = {node: alias_node for node, alias_node in alias_nodes}
 
-		# for node in graph.nodes():
-		# 	# unnormalized_probs = [graph[node][nbr]['weight'] for nbr in sorted(graph.neighbors(node))]
-		# 	# norm_const = sum(unnormalized_probs)
-		# 	# normalized_probs =  [float(u_prob)/norm_const for u_prob in unnormalized_probs]
-
-		# 	# alias_nodes[node] = alias_setup(normalized_probs)
-		# 	alias_nodes[node] = self.get_alias_node(node)
-
-		# 	if i % 1000 == 0:
-		# 		print ("preprocessed node {:04d}/{}".format(i, len(graph)))
-		# 	i += 1
-
 		print ("preprocessed all nodes")
 		self.alias_nodes = alias_nodes
-
-		alias_edges = {}
 
 		edges = list(graph.edges())
 		if not is_directed:
 			edges += [(v, u) for u, v in edges]
 
-		print ("preprocessing edges")
+		if self.p != 1 or self.q != 1:
+			print ("preprocessing edges")
 
-		with Pool(processes=None) as p:
-			alias_edges = p.map(self.get_alias_edge, edges)
-		alias_edges = {edge: alias_edge for edge, alias_edge in alias_edges}
+			with Pool(processes=None) as p:
+				alias_edges = p.map(self.get_alias_edge, edges)
+			alias_edges = {edge: alias_edge for edge, alias_edge in alias_edges}
 
-		# if is_directed:
-		# 	for edge in graph.edges():
-		# 		alias_edges[edge] = self.get_alias_edge(edge[0], edge[1])
-		# else:
-		# 	i = 0
-		# 	for edge in graph.edges():
-		# 		if i % 1000 == 0:
-		# 			print ("preprocessed edge {:05d}/{}".format(i, 2*len(graph.edges())))
-		# 		alias_edges[edge] = self.get_alias_edge(edge[0], edge[1])
-		# 		alias_edges[(edge[1], edge[0])] = self.get_alias_edge(edge[1], edge[0])
-		# 		i += 2
-
-		print ("preprocessed all edges")
-
+			print ("preprocessed all edges")
+		else:
+			print ("p and q are both set to 1, skipping preprocessing edges")
+			alias_edges = None
 		self.alias_edges = alias_edges
 
 
