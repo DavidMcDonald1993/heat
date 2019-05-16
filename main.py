@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import h5py
 import multiprocessing 
 import re
@@ -371,6 +371,8 @@ def main():
 
 	positive_samples, negative_samples, probs =\
 			determine_positive_and_negative_samples(graph, features, args)
+
+	features = None # remove features reference to save memory
 
 	if args.use_generator:
 		print ("Training with data generator with {} worker threads".format(args.workers))

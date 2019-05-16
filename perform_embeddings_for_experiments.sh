@@ -6,6 +6,8 @@ days=3
 hrs=00
 mem=10G
 
+e=5
+
 # nc experiments
 for dataset in cora_ml citeseer ppi
 do
@@ -29,7 +31,7 @@ do
 			)
 
 			cmd=$(echo python ${heat} --edgelist ${edgelist} --features ${features} --labels ${labels} \
-			--embedding ${embedding_dir} --walks ${walks_dir} --seed ${seed} --dim ${dim} -e 5)
+			--embedding ${embedding_dir} --walks ${walks_dir} --seed ${seed} --dim ${dim} -e ${e})
 				
 			for alpha in 00 05 10 20 50 80
 			do
@@ -42,7 +44,7 @@ do
 				--error=performEmbeddingsNC-${dataset}-${dim}-${seed}-0.${alpha}.err
 				)
 
-				if [ ! -f $(printf "${embedding_dir}/alpha=0.${alpha}/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
+				if [ ! -f $(printf "${embedding_dir}/alpha=0.${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e}) ]
 				then
 					echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha}
 					sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha})
@@ -58,7 +60,7 @@ do
 			--error=performEmbeddingsNC-${dataset}-${dim}-${seed}-1.0.err
 			)
 
-			if [ ! -f $(printf "${embedding_dir}/alpha=1.00/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
+			if [ ! -f $(printf "${embedding_dir}/alpha=1.00/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e}) ]
 			then
 				echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0'
 				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0')
@@ -91,7 +93,7 @@ do
 			)
 
 			cmd=$(echo python ${heat} --edgelist ${edgelist} --features ${features} --labels ${labels} \
-			--embedding ${embedding_dir} --walks ${walks_dir} --seed ${seed} --dim ${dim} -e 5)
+			--embedding ${embedding_dir} --walks ${walks_dir} --seed ${seed} --dim ${dim} -e ${e})
 				
 			for alpha in 00 05 10 20 50 80
 			do
@@ -105,7 +107,7 @@ do
 				--error=performEmbeddingsLP-${dataset}-${dim}-${seed}-0.${alpha}.err
 				)
 
-				if [ ! -f $(printf "${embedding_dir}/alpha=0.${alpha}/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
+				if [ ! -f $(printf "${embedding_dir}/alpha=0.${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e}) ]
 				then
 					echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha}
 					sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha})
@@ -121,7 +123,7 @@ do
 			--error=performEmbeddingsLP-${dataset}-${dim}-${seed}-1.0.err
 			)
 
-			if [ ! -f $(printf "${embedding_dir}/alpha=1.00/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
+			if [ ! -f $(printf "${embedding_dir}/alpha=1.00/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e}) ]
 			then
 				echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0'
 				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0')

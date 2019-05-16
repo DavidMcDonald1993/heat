@@ -228,6 +228,10 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 	def determine_positive_samples_and_probs(graph, features, args):
 
+		N = len(graph)
+		negative_samples = np.ones((N, N))
+		np.fill_diagonal(negative_samples, 0)
+
 		if args.no_walks:
 
 			print ("using only edges as positive samples")
@@ -235,7 +239,9 @@ def determine_positive_and_negative_samples(graph, features, args):
 			positive_samples = list(graph.edges())
 			positive_samples += [(v, u) for (u, v) in positive_samples]
 
-			all_positive_samples = {n: set([n] + list(graph.neighbors(n))) for n in sorted(nodes)}
+			for n in sorted(graph.nodes()):
+				negative_samples[n, list(graph.neighbors(n))] = 0
+			# all_positive_samples = {n: set([n] + list(graph.neighbors(n))) for n in sorted(nodes)}
 
 			counts = np.array([graph.degree(n) for n in sorted(nodes)])
 
@@ -248,7 +254,7 @@ def determine_positive_and_negative_samples(graph, features, args):
 			context_size = args.context_size
 			directed = args.directed
 			
-			all_positive_samples = {n: {n} for n in sorted(nodes)}
+			# all_positive_samples = {n: {n} for n in sorted(nodes)}
 
 			positive_samples = []
 
@@ -268,11 +274,13 @@ def determine_positive_and_negative_samples(graph, features, args):
 						positive_samples.append((u, v))
 						positive_samples.append((v, u))
 
+						negative_samples[((u,v), (v,u))] = 0
+
 						# bisect.insort_left(positive_samples, (u, v))
 						# bisect.insort_left(positive_samples, (v, u))
 
-						all_positive_samples[u].add(v)
-						all_positive_samples[v].add(u)
+						# all_positive_samples[u].add(v)
+						# all_positive_samples[v].add(u)
 
 				if num_walk % 1000 == 0:  
 					print ("processed walk {:04d}/{}".format(num_walk, len(walks)))
@@ -281,9 +289,9 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		print ("DETERMINING NEGATIVE SAMPLE PROBS")
 
-		negative_samples = np.ones((len(nodes), len(nodes)))
-		for n in sorted(nodes):
-			negative_samples[n,positive_samples[n]] = 0
+		# negative_samples = np.ones((len(nodes), len(nodes)))
+		# for n in sorted(nodes):
+		# 	negative_samples[n, list(all_positive_samples[n])] = 0
 
 		# with Pool(processes=None) as p:
 		# 	negative_samples = p.map(functools.partial(determine_negative_samples, nodes=nodes), 
@@ -302,6 +310,7 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		probs = probs * negative_samples
 		probs /= probs.sum(axis=-1, keepdims=True)
+
 
 		# # prob_dict = {n: probs[negative_samples[n]] for n in sorted(nodes)}
 		# # prob_dict = {n: p / p.sum() for n, p in prob_dict.items()}
@@ -331,13 +340,13 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		negative_samples = np.concatenate([arr for _, arr in sorted(negative_samples, key=lambda x: x[0])], axis=0,)
 
-		return negative_samples
+		return positive_samples, negative_samples
 
 	positive_samples, probs = determine_positive_samples_and_probs(graph, features, args)
 
 	if not args.use_generator:
-		print("trianing without generator -- selecting negative samples before training")
-		negative_samples = select_negative_samples(positive_samples, probs)
+		print("training without generator -- selecting negative samples before training")
+		positive_samples, negative_samples = select_negative_samples(positive_samples, probs)
 		probs = None
 	else:
 		print ("training with generator -- skipping selecting negative samples")

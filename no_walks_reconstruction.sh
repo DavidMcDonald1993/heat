@@ -6,6 +6,8 @@ days=3
 hrs=00
 mem=10G
 
+e=1500
+
 for dataset in cora_ml citeseer ppi
 do
 	for dim in 5 10 25 50
@@ -28,7 +30,7 @@ do
 			)
 
 			cmd=$(echo python ${heat} --edgelist ${edgelist} --features ${features} --labels ${labels} \
-			--embedding ${embedding_dir} --no-walks --seed ${seed} --dim ${dim} -e 1500 --nneg 50)
+			--embedding ${embedding_dir} --no-walks --seed ${seed} --dim ${dim} -e ${e} --nneg 50)
 
 			slurm_options=$(echo \
 			--job-name=performEmbeddingsNC-${dataset}-${dim}-${seed}-no-walks\
@@ -38,7 +40,7 @@ do
 			--error=performEmbeddingsNC-${dataset}-${dim}-${seed}-no-walks.err
 			)
 
-			if [ ! -f $(printf "${embedding_dir}/no_walks/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim}) ]
+			if [ ! -f $(printf "${embedding_dir}/no_walks/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e}) ]
 			then
 				echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}
 				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd})
