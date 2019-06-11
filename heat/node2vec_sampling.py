@@ -11,13 +11,24 @@ import functools
 from multiprocessing.pool import Pool
 
 class Graph():
-	def __init__(self, graph, is_directed, p, q, alpha=0, feature_sim=None, seed=0):
+	def __init__(self, 
+		graph, 
+		is_directed, 
+		p, 
+		q, 
+		alpha=0, 
+		feature_sim=None, 
+		seed=0):
+		assert not nx.is_directed(graph)
 		self.graph = graph
 		self.is_directed = is_directed
 		self.p = p
 		self.q = q
 		self.alpha = alpha
 		self.feature_sim = feature_sim 
+		if self.feature_sim is not None:
+			self.feature_sim = self.feature_sim.cumsum(-1)
+
 		np.random.seed(seed)
 		random.seed(seed)
 
@@ -29,6 +40,9 @@ class Graph():
 		alias_nodes = self.alias_nodes
 		alias_edges = self.alias_edges
 		feature_sim = self.feature_sim
+
+		if feature_sim is not None:
+			N = len(feature_sim)
 
 		jump = False
 		preprocessed_edges = alias_edges is not None
@@ -45,7 +59,8 @@ class Graph():
 				and not (feature_sim[cur]<1e-15).all() 
 				and (np.random.rand() < self.alpha or len(cur_nbrs) == 0)):
 				# random jump based on attribute similarity
-				next_ = np.random.choice(len(feature_sim), replace=False, p=feature_sim[cur])
+				# next_ = np.random.choice(N, replace=False, p=feature_sim[cur])
+				next_ = np.searchsorted(feature_sim[cur], np.random.rand())
 				walk.append(next_)
 				jump = True
 
@@ -93,7 +108,7 @@ class Graph():
 
 		graph = self.graph
 
-		unnormalized_probs = [graph[node][nbr]['weight'] for nbr in sorted(graph.neighbors(node))]
+		unnormalized_probs = [abs(graph[node][nbr]['weight']) for nbr in sorted(graph.neighbors(node))]
 		norm_const = sum(unnormalized_probs)
 		normalized_probs =  [float(u_prob)/norm_const for u_prob in unnormalized_probs]
 
@@ -112,11 +127,11 @@ class Graph():
 		unnormalized_probs = []
 		for dst_nbr in sorted(graph.neighbors(dst)):
 			if dst_nbr == src:
-				unnormalized_probs.append(graph[dst][dst_nbr]['weight']/p)
+				unnormalized_probs.append(abs(graph[dst][dst_nbr]['weight'])/p)
 			elif graph.has_edge(dst_nbr, src):
-				unnormalized_probs.append(graph[dst][dst_nbr]['weight'])
+				unnormalized_probs.append(abs(graph[dst][dst_nbr]['weight']))
 			else:
-				unnormalized_probs.append(graph[dst][dst_nbr]['weight']/q)
+				unnormalized_probs.append(abs(graph[dst][dst_nbr]['weight'])/q)
 		norm_const = sum(unnormalized_probs)
 		normalized_probs =  [float(u_prob)/norm_const for u_prob in unnormalized_probs]
 

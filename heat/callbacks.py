@@ -38,8 +38,8 @@ class Checkpointer(Callback):
 
 	def save_model(self):
 		filename = os.path.join(self.embedding_directory, "{:05d}_embedding.csv".format(self.epoch))
-		embedding = self.model.get_weights()[-1]
-		assert (np.allclose(minkowski_dot(embedding), -1))
+		embedding = self.model.get_weights()[0]
+		# assert (np.allclose(minkowski_dot(embedding), -1))
 		print ("saving current embedding to {}".format(filename))
 
 		embedding_df = pd.DataFrame(embedding, index=self.nodes)

@@ -13,6 +13,7 @@ import numpy as np
 import networkx as nx
 import pandas as pd
 import glob
+import gc
 
 from scipy.sparse import identity
 import matplotlib.pyplot as plt
@@ -61,12 +62,12 @@ def gans_to_hyperboloid(x):
 	return tf.concat([x, t], axis=-1)
 
 def euclidean_dot(x, y):
-    axes = len(x.shape) - 1, len(y.shape) - 1
-    return K.batch_dot(x, y, axes=axes)
+	axes = len(x.shape) - 1, len(y.shape) - 1
+	return K.batch_dot(x, y, axes=axes)
 
 def minkowski_dot(x, y):
-    axes = len(x.shape) - 1, len(y.shape) -1
-    return K.batch_dot(x[...,:-1], y[...,:-1], axes=axes) - K.batch_dot(x[...,-1:], y[...,-1:], axes=axes)
+	axes = len(x.shape) - 1, len(y.shape) -1
+	return K.batch_dot(x[...,:-1], y[...,:-1], axes=axes) - K.batch_dot(x[...,-1:], y[...,-1:], axes=axes)
 
 def hyperboloid_initializer(shape, r_max=1e-3):
 
@@ -130,11 +131,7 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		super(ExponentialMappingOptimizer, self).__init__(use_locking, name)
 		self.lr = lr
 
-	# def _prepare(self):
-	# 	self._lr_t = ops.convert_to_tensor(self.lr, name="learning_rate", dtype=K.floatx())
-
 	def _apply_dense(self, grad, var):
-		# lr_t = math_ops.cast(self.lr, var.dtype.base_dtype)
 		spacial_grad = grad[:,:-1]
 		t_grad = -1 * grad[:,-1:]
 		
@@ -152,7 +149,6 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		p = tf.gather(var, indices, name="gather_apply_sparse")
 		# p = tf.nn.embedding_lookup(var, indices)
 
-		# lr_t = math_ops.cast(self.lr, var.dtype.base_dtype)
 		spacial_grad = values[:, :-1]
 		t_grad = -values[:, -1:]
 
@@ -200,14 +196,19 @@ def build_model(num_nodes, args):
 	y = HyperboloidEmbeddingLayer(num_nodes, args.embedding_dim, name="embedding_layer")(x)
 	model = Model(x, y)
 
+	return model
+
+
+def load_weights(model, args):
+
 	previous_models = sorted(glob.glob(os.path.join(args.embedding_path, "*.csv")))
 	if len(previous_models) > 0:
 		model_file = previous_models[-1]
 		initial_epoch = int(model_file.split("/")[-1].split("_")[0])
 		print ("previous models found in directory -- loading from file {} and resuming from epoch {}".format(model_file, initial_epoch))
 		embedding_df = load_embedding(model_file)
-		embedding = embedding_df.reindex(range(num_nodes)).values
-		model.layers[-1].set_weights([embedding])
+		embedding = embedding_df.reindex(sorted(embedding_df.index)).values
+		model.layers[1].set_weights([embedding])
 	else:
 		print ("no previous model found in {}".format(args.embedding_path))
 		initial_epoch = 0
@@ -229,8 +230,8 @@ def parse_args():
 
 	parser.add_argument("--seed", dest="seed", type=int, default=0,
 		help="Random seed (default is 0).")
-	parser.add_argument("--lr", dest="lr", type=np.float64, default=3e-1,
-		help="Learning rate (default is 3e-1).")
+	parser.add_argument("--lr", dest="lr", type=np.float64, default=1.,
+		help="Learning rate (default is 1.).")
 
 	parser.add_argument("-e", "--num_epochs", dest="num_epochs", type=int, default=5,
 		help="The number of epochs to train for (default is 5).")
@@ -252,7 +253,7 @@ def parse_args():
 		help="node2vec in-out parameter (default is 1.).")
 	parser.add_argument('--num-walks', dest="num_walks", type=int, default=10, 
 		help="Number of walks per source (default is 10).")
-	parser.add_argument('--walk-length', dest="walk_length", type=int, default=80, 
+	parser.add_argument('--walk-length', dest="walk_length", type=int, default=15, 
 		help="Length of random walk from source (default is 80).")
 
 	parser.add_argument("--sigma", dest="sigma", type=np.float64, default=1.,
@@ -341,21 +342,11 @@ def main():
 
 	print ("Configured paths")
 
-	if args.directed:
-		directed_edges = list(graph.edges())
-		print ("DISCOVERED {} DIRECTED EDGES".format(len(directed_edges)))
-	else:
-		directed_edges = None
-
-	graph = graph.to_undirected() # we perform walks on undirected matrix
-	
-	# original edges for reconstruction
-	undirected_edges = list(graph.edges())
-
 	# build model
 	num_nodes = len(graph)
-	model, initial_epoch = build_model(num_nodes, args)
-
+	
+	model = build_model(num_nodes, args)
+	model, initial_epoch = load_weights(model, args)
 	optimizer = ExponentialMappingOptimizer(lr=args.lr)
 	loss = hyperbolic_softmax_loss(sigma=args.sigma)
 	model.compile(optimizer=optimizer, 
@@ -365,26 +356,30 @@ def main():
 
 	callbacks = [
 		TerminateOnNaN(),
-		EarlyStopping(monitor="loss", patience=args.patience, verbose=True),
-		Checkpointer(epoch=initial_epoch, nodes=sorted(graph.nodes()), embedding_directory=args.embedding_path)
+		EarlyStopping(monitor="loss", 
+			patience=args.patience, 
+			verbose=True),
+		Checkpointer(epoch=initial_epoch, 
+			nodes=sorted(graph.nodes()), 
+			embedding_directory=args.embedding_path)
 	]			
 
 	positive_samples, negative_samples, probs =\
 			determine_positive_and_negative_samples(graph, features, args)
 
-	features = None # remove features reference to save memory
+	features = None # remove features reference to free up memory
+	gc.collect()
 
 	if args.use_generator:
 		print ("Training with data generator with {} worker threads".format(args.workers))
 		training_generator = TrainingDataGenerator(positive_samples,  
-				# negative_samples, 
-				# alias_dict, 
 				probs,
+				model,
 				args)
 
 		model.fit_generator(training_generator, 
 			workers=args.workers,
-			max_queue_size=100, 
+			max_queue_size=10, 
 			use_multiprocessing=args.workers>0, 
 			epochs=args.num_epochs, 
 			steps_per_epoch=len(training_generator),
@@ -396,14 +391,10 @@ def main():
 	else:
 		print ("Training without data generator")
 
-		# train_x = build_training_samples(np.array(positive_samples), 
-				# negative_samples,
-				# args.num_negative_samples, 
-				# alias_dict)
 		train_x = np.append(positive_samples, negative_samples, axis=-1)
 		train_y = np.zeros([len(train_x), 1, 1], dtype=np.int32 )
 
-		model.fit(train_x, train_y, 
+		model.fit(train_x, train_y,
 			shuffle=True,
 			batch_size=args.batch_size, 
 			epochs=args.num_epochs, 
@@ -412,11 +403,14 @@ def main():
 			callbacks=callbacks
 		)
 
-	embedding = model.get_weights()[-1]
+	print ("Training complete")
 
 	if args.visualise:
-		embedding = hyperboloid_to_poincare_ball(embedding)
-		draw_graph(undirected_edges if not args.directed else directed_edges, 
+		embedding = model.get_weights()[0]
+		if embedding.shape[1] == 3:
+			print ("projecting to poincare ball")
+			embedding = hyperboloid_to_poincare_ball(embedding)
+		draw_graph(graph,#undirected_edges if not args.directed else directed_edges, 
 			embedding, node_labels, path="2d-poincare-disk-visualisation.png")
 
 if __name__ == "__main__":

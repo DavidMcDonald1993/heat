@@ -6,38 +6,34 @@ import scipy as sp
 
 from keras.utils import Sequence
 
+def hyperbolic_distance(u, v):
+	mink_dp = u[:,:-1].dot(v[:,:-1].T) - u[:,-1:] * v[:,-1:].T
+	mink_dp = np.maximum(-mink_dp, 1 + 1e-15)
+	return np.arccosh(mink_dp)
+
 class TrainingDataGenerator(Sequence):
 
-	def __init__(self, positive_samples, probs, args):
-		assert isinstance(positive_samples, list)
+	def __init__(self, positive_samples, probs, model, args):
 		self.positive_samples = positive_samples
-		# self.negative_samples = negative_samples
-		# self.alias_dict = alias_dict
 		self.probs = probs
 		self.batch_size = args.batch_size
 		self.num_negative_samples = args.num_negative_samples
+		self.model = model
 
-	# def alias_draw(self, J, q, size=1):
-	#     '''
-	#     Draw sample from a non-uniform discrete distribution using alias sampling.
-	#     '''
-	#     K = len(J)
-	#     kk = np.floor(np.random.uniform(high=K, size=size)).astype(np.int)
-	#     r = np.random.uniform(size=size)
-	#     idx = r >= q[kk]
-	#     kk[idx] = J[kk[idx]]
-	    # return kk
+		# embedding = self.model.get_weights()[-1]
+		# dists = hyperbolic_distance(embedding, embedding)
+		# probs = np.exp(-dists) * self.probs_
+		# probs /= probs.sum(axis=-1, keepdims=True)
+		# self.probs = probs.cumsum(-1)
 
 	def get_training_sample(self, batch_positive_samples):
-		# negative_samples = self.negative_samples
 		num_negative_samples = self.num_negative_samples
 		probs = self.probs
 		
 		input_nodes = batch_positive_samples[:,0]
+
 		batch_negative_samples = np.array([
 			np.searchsorted(probs[u], np.random.rand(num_negative_samples))
-			# negative_samples[u][self.alias_draw(alias_dict[u][0], alias_dict[u][1], size=num_negative_samples)]
-
 			for u in input_nodes
 		], dtype=np.int32)
 
@@ -51,8 +47,7 @@ class TrainingDataGenerator(Sequence):
 	def __getitem__(self, batch_idx):
 		batch_size = self.batch_size
 		positive_samples = self.positive_samples
-		batch_positive_samples = np.array(
-			positive_samples[batch_idx * batch_size : (batch_idx + 1) * batch_size], dtype=np.int32)
+		batch_positive_samples = positive_samples[batch_idx * batch_size : (batch_idx + 1) * batch_size]
 		training_sample = self.get_training_sample(batch_positive_samples)
 		
 		target = np.zeros((training_sample.shape[0], 1, 1), dtype=np.int32)
@@ -60,4 +55,12 @@ class TrainingDataGenerator(Sequence):
 		return training_sample, target
 
 	def on_epoch_end(self):
-		random.shuffle(self.positive_samples)
+		positive_samples = self.positive_samples
+		idx = np.random.permutation(len(positive_samples))
+		self.positive_samples = positive_samples[idx]
+
+		# embedding = self.model.get_weights()[-1]
+		# dists = hyperbolic_distance(embedding, embedding)
+		# probs = np.exp(-dists) * self.probs_
+		# probs /= probs.sum(axis=-1, keepdims=True)
+		# self.probs = probs.cumsum(-1)

@@ -7,7 +7,6 @@ import numpy as np
 import networkx as nx
 
 import random
-# import bisect
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
@@ -23,7 +22,7 @@ from multiprocessing.pool import Pool
 import matplotlib.pyplot as plt
 
 from collections import Counter
-
+import gc
 
 def load_data(args):
 
@@ -34,9 +33,12 @@ def load_data(args):
 	graph = nx.read_weighted_edgelist(edgelist_filename, delimiter="\t", nodetype=int,
 		create_using=nx.DiGraph() if args.directed else nx.Graph())
 
-	# remove self loops as they slow down random walk
-	graph.remove_edges_from(graph.selfloop_edges())
-	print ("removing all self loop edges")
+	print ("ensuring all weights are positive")
+	nx.set_edge_attributes(graph, name="weight", values={edge: abs(weight) 
+		for edge, weight in nx.get_edge_attributes(graph, name="weight").items()})
+
+	for u in range(len(graph)):
+		assert u in graph
 
 	print ("number of nodes: {}\nnumber of edges: {}\n".format(len(graph), len(graph.edges())))
 
@@ -62,7 +64,7 @@ def load_data(args):
 
 		if labels_filename.endswith(".csv"):
 			labels = pd.read_csv(labels_filename, index_col=0, sep=",")
-			labels = labels.reindex(sorted(graph.nodes())).values#.flatten()
+			labels = labels.reindex(sorted(graph.nodes())).values.astype(int)#.flatten()
 			assert len(labels.shape) == 2
 		elif labels_filename.endswith(".pkl"):
 			with open(labels_filename, "rb") as f:
@@ -160,28 +162,12 @@ def convert_edgelist_to_dict(edgelist, undirected=True, self_edges=False):
 
 def get_training_sample(samples, num_negative_samples, ):
 	positive_sample_pair, probs = samples
-	# negative_samples_ = negative_samples[alias_draw(probs[0], probs[1], num_negative_samples)]
 	negative_samples_ = np.random.choice(len(probs), replace=True, size=num_negative_samples, p=probs)
 	return np.append(positive_sample_pair, negative_samples_, )
 
 def build_training_samples(positive_samples, negative_samples, num_negative_samples, alias_dict):
 	input_nodes = positive_samples[:,0]
 	print ("Building training samples")
-	N = len(alias_dict)
-
-	# batch_negative_samples = np.array([
-	# 	np.random.choice(N, replace=True, size=num_negative_samples, p=probs)
-	# 	for probs in (alias_dict[u] for u in input_nodes)
-	# ], dtype=np.int64)
-	# batch_nodes = np.append(positive_samples, batch_negative_samples, axis=1)
-	# return batch_nodes
-
-	# batch_negative_samples = np.array([
-	# 	negative_samples[u][alias_draw(alias_dict[u][0], alias_dict[u][1], num_negative_samples)]
-	# 	for u in input_nodes
-	# ], dtype=np.int64)
-	# batch_nodes = np.append(positive_samples, batch_negative_samples, axis=1)
-	# return batch_nodes
 	
 	with Pool(processes=2) as p:
 		training_samples = p.map(functools.partial(get_training_sample,
@@ -215,11 +201,9 @@ def create_feature_graph(features, args):
 
 	return feature_graph
 
-# def determine_negative_samples(positive_samples, nodes):
-# 	n, all_positive_samples = positive_samples
-# 	return n, np.array(sorted(nodes.difference(all_positive_samples)))
-
 def determine_positive_and_negative_samples(graph, features, args):
+
+	graph = graph.to_undirected() # we perform walks on undirected matrix
 
 	nodes = graph.nodes()
 
@@ -229,8 +213,8 @@ def determine_positive_and_negative_samples(graph, features, args):
 	def determine_positive_samples_and_probs(graph, features, args):
 
 		N = len(graph)
-		negative_samples = np.ones((N, N))
-		np.fill_diagonal(negative_samples, 0)
+		negative_samples = np.ones((N, N), dtype=bool)
+		# np.fill_diagonal(negative_samples, 0)
 
 		if args.no_walks:
 
@@ -241,7 +225,6 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 			for n in sorted(graph.nodes()):
 				negative_samples[n, list(graph.neighbors(n))] = 0
-			# all_positive_samples = {n: set([n] + list(graph.neighbors(n))) for n in sorted(nodes)}
 
 			counts = np.array([graph.degree(n) for n in sorted(nodes)])
 
@@ -254,17 +237,16 @@ def determine_positive_and_negative_samples(graph, features, args):
 			context_size = args.context_size
 			directed = args.directed
 			
-			# all_positive_samples = {n: {n} for n in sorted(nodes)}
-
 			positive_samples = []
 
-			counts = {n: 0. for n in sorted(nodes)}
+			counts = np.zeros(N)
 
 			for num_walk, walk in enumerate(walks):
 				for i in range(len(walk)):
 					u = walk[i]
 					counts[u] += 1	
 					for j in range(context_size):
+
 						if i+j+1 >= len(walk):
 							break
 						v = walk[i+j+1]
@@ -274,71 +256,45 @@ def determine_positive_and_negative_samples(graph, features, args):
 						positive_samples.append((u, v))
 						positive_samples.append((v, u))
 
-						negative_samples[((u,v), (v,u))] = 0
-
-						# bisect.insort_left(positive_samples, (u, v))
-						# bisect.insort_left(positive_samples, (v, u))
-
-						# all_positive_samples[u].add(v)
-						# all_positive_samples[v].add(u)
+						negative_samples[u, v] = 0
+						negative_samples[v, u] = 0
 
 				if num_walk % 1000 == 0:  
 					print ("processed walk {:04d}/{}".format(num_walk, len(walks)))
 
-			counts = np.array([counts[n] for n in sorted(nodes)])
-
-		print ("DETERMINING NEGATIVE SAMPLE PROBS")
-
-		# negative_samples = np.ones((len(nodes), len(nodes)))
-		# for n in sorted(nodes):
-		# 	negative_samples[n, list(all_positive_samples[n])] = 0
-
-		# with Pool(processes=None) as p:
-		# 	negative_samples = p.map(functools.partial(determine_negative_samples, nodes=nodes), 
-		# 		((n, all_positive_samples[n]) for n in sorted(nodes)))
-		# negative_samples = {n: s for n, s in negative_samples}
-		# # negative_samples = {n: np.array(sorted(nodes.difference(all_positive_samples[n]))) for n in sorted(nodes)}
-		# for u, neg_samples in negative_samples.items():
-		# 	assert len(neg_samples) > 0, "node {} does not have any negative samples".format(u)
-		# 	# print ("node {} has {} negative samples".format(u, len(neg_samples)))
 
 		print ("DETERMINED POSITIVE AND NEGATIVE SAMPLES")
 		print ("found {} positive sample pairs".format(len(positive_samples)))
 
 		counts = counts ** 0.75
+		# counts = np.ones_like(counts)
 		probs = counts[None, :] 
 
 		probs = probs * negative_samples
+		assert (probs > 0).any(axis=-1).all(), "a node in the network does not have any negative samples"
 		probs /= probs.sum(axis=-1, keepdims=True)
-
-
-		# # prob_dict = {n: probs[negative_samples[n]] for n in sorted(nodes)}
-		# # prob_dict = {n: p / p.sum() for n, p in prob_dict.items()}
-		# prob_dict = {n: probs[n] for n in sorted(nodes)}
-		# print ("PREPROCESSING NEGATIVE SAMPLE PROBABILTIES")
-
-		# with Pool(processes=None) as p:
-		# 	alias_dict = p.map(alias_setup, prob_dict.items())
-
-		# alias_dict = {n: p for n, p in alias_dict}
-		probs = probs.cumsum(-1)
+		probs = probs.cumsum(axis=-1)
 
 		print ("PREPROCESSED NEGATIVE SAMPLE PROBABILTIES")
 
+		print ("SORTING POSITIVE SAMPLES")
+		positive_samples = np.array(positive_samples)
+		idx = positive_samples[:,0].argsort()
+		positive_samples = positive_samples[idx]
+		print ("SORTED POSITIVE SAMPLES")
+
 		return positive_samples, probs
 
-	def select_negative_samples(positive_samples, probs):
-
-		print ("SORTING POSITIVE SAMPLES")
-		positive_samples = np.array(sorted(positive_samples), dtype=np.int32)
-		print ("SORTED POSITIVE SAMPLES")
+	def select_negative_samples(positive_samples, probs, num_negative_samples):
 
 		with Pool(processes=None) as p:
 			negative_samples = p.map(functools.partial(choose_negative_samples,
-			num_negative_samples=args.num_negative_samples), 
-			((u, count, probs[u]) for u, count in  Counter(positive_samples[:,0]).items()))
+			num_negative_samples=num_negative_samples), 
+			((u, count, probs[u]) for u, count in Counter(positive_samples[:,0]).items()))
 
 		negative_samples = np.concatenate([arr for _, arr in sorted(negative_samples, key=lambda x: x[0])], axis=0,)
+
+		print ("selected negative samples")
 
 		return positive_samples, negative_samples
 
@@ -346,18 +302,16 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 	if not args.use_generator:
 		print("training without generator -- selecting negative samples before training")
-		positive_samples, negative_samples = select_negative_samples(positive_samples, probs)
+		positive_samples, negative_samples = select_negative_samples(positive_samples, probs, args.num_negative_samples)
 		probs = None
 	else:
 		print ("training with generator -- skipping selecting negative samples")
 		negative_samples = None 
 
-
 	return positive_samples, negative_samples, probs# negative_samples, alias_dict
 
 def choose_negative_samples(x, num_negative_samples):
 		u, count, probs = x
-		# return u, np.random.multinomial(1, probs, size=(count, num_negative_samples)).argmax(-1)
 		return u, np.searchsorted(probs, np.random.rand(count, num_negative_samples)).astype(np.int32)
 
 def perform_walks(graph, features, args):

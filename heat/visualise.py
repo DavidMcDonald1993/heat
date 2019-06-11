@@ -5,6 +5,7 @@ from matplotlib.patches import Circle, Wedge, Polygon, ArrowStyle
 from matplotlib.collections import PatchCollection
 from matplotlib import patches
 import collections
+import networkx as nx
 
 '''
 Code obtained from github
@@ -117,8 +118,30 @@ def draw_geodesic(a, b, c, ax, c1=None, c2=None, verbose=False, width=.05):
                              theta1=theta1_, theta2=theta2_, linewidth=width, fill=False, zorder=0)
         ax.add_patch(e)
 
-def draw_graph(edges, embedding, labels, path, s=25):
+def draw_graph(graph, embedding, labels, path, s=25):
     assert embedding.shape[1] == 2 
+
+    edges = list(graph.edges())
+
+    if labels is not None:
+        # filter out noise nodes labelled as -1
+        idx, = np.where(labels[:,0] > -1)
+        num_labels = int(max(set(labels[:,0])) + 1)
+        # colours = np.random.rand(num_labels, 3)
+        colours = np.array([
+            [1,0,0],
+            [0,1,0],
+            [0,0,1],
+            [1,1,0],
+            [1,0,1],
+            [0,1,1],
+            [0,0,0],
+            [1,1,1]
+            ]) 
+        # colours = np.array(["r", "g", "b", "y", "m", "c"])
+        assert num_labels < len(colours)
+    else:
+        idx = np.arange(len(embedding))
 
     if not isinstance(edges, np.ndarray):
         edges = np.array(edges)
@@ -133,19 +156,30 @@ def draw_graph(edges, embedding, labels, path, s=25):
 
     hyperbolic_setup(fig, ax)
 
-    a = embedding[edges[:,0]]
-    b = embedding[edges[:,1]]
-    c = get_third_point(a, b)
+    # a = embedding[edges[:,0]]
+    # b = embedding[edges[:,1]]
+    # c = get_third_point(a, b)
     
-    draw_geodesic(a, b, c, ax)
+    # draw_geodesic(a, b, c, ax)
 
-    if labels is not None:
-        num_labels = max(set(labels[:,0])) + 1
-        colours = np.random.rand(num_labels, 3)
+    # # s = {n: (bc+.05) * 100 for n, bc in nx.betweenness_centrality(graph).items()}
+    # # s = [s[n] for n in sorted(graph.nodes)]
+    # s = np.array([graph.degree(n, weight="weight") for n in sorted(graph.nodes())])
+    # s = s / s.max() * 100
+    # ax.scatter(embedding[idx,0], embedding[idx,1], 
+    #     c=colours[labels[idx,0]] if labels is not None else None,
+    #     s=s, zorder=2)
 
-    ax.scatter(embedding[:,0], embedding[:,1], 
-        c=colours[labels[:,0]] if labels is not None else None,
-        s=s, zorder=2)
+    pos = {n: emb for n, emb in zip(sorted(graph.nodes()), embedding)}
+    node_colours = np.array([colours[labels[n, 0]] for n in graph.nodes()])
+    
+    # bc  = nx.betweenness_centrality(graph)
+    # node_sizes = np.array([(bc[n] + .05) * 50 for n in sorted(graph.nodes())])
+    node_sizes = np.array([graph.degree(n, weight="weight") for n in graph.nodes()])
+    node_sizes = node_sizes / node_sizes.max() * 250
+    nx.draw_networkx_nodes(graph, pos=pos, node_color=node_colours, node_size=node_sizes)
+    nx.draw_networkx_edges(graph, pos=pos, width=.05, node_size=node_sizes)
+    # nx.draw_networkx_edge_labels(graph, pos=pos, edge_labels=nx.get_edge_attributes(graph, name="weight"))
 
     plt.savefig(path)
     plt.close()
@@ -153,11 +187,9 @@ def draw_graph(edges, embedding, labels, path, s=25):
 def plot_degree_dist(graph, title):
 
     fig = plt.figure()
-    # plt.suptitle(title)
-    
     ax = fig.add_subplot(111)
 
-    degrees = sorted(dict(graph.degree()).values())
+    degrees = sorted(dict(graph.degree(weight="weight")).values())
 
     deg, counts = zip(*collections.Counter(degrees).items())
     deg = np.array(deg)
