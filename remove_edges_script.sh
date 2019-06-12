@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --job-name=removeEdges
-#SBATCH --output=removeEdges%A_%a.out
-#SBATCH --error=removeEdges%A_%a.err
+#SBATCH --output=removeEdges_%A_%a.out
+#SBATCH --error=removeEdges_%A_%a.err
 #SBATCH --array=0-149
 #SBATCH --time=01:00:00
 #SBATCH --ntasks=1
@@ -25,4 +25,9 @@ edgelist=datasets/${dataset}/edgelist.tsv
 features=datasets/${dataset}/feats.csv
 labels=datasets/${dataset}/labels.csv
 output=edgelists/${dataset}/
+
+module purge
+module load bluebear
+module load apps/python3/3.5.2
+
 python remove_edges.py --edgelist=$edgelist --features=$features --labels=$labels --output=$output --seed $seed
