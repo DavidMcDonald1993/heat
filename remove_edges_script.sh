@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for dataset in cora_ml citeseer ppi
+for dataset in cora_ml citeseer ppi pubmed mit
 do
 	for seed in {0..29} 
 	do
