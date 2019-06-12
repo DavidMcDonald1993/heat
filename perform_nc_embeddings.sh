@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #SBATCH --job-name=embeddingsNC
-#SBATCH --output=embeddingsNC%A_%a.out
-#SBATCH --error=embeddingsNC%A_%a.err
-#SBATCH --array=0-4200
+#SBATCH --output=embeddingsNC_%A_%a.out
+#SBATCH --error=embeddingsNC_%A_%a.err
+#SBATCH --array=0-4199
 #SBATCH --time=3-00:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=16G
