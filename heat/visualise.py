@@ -171,7 +171,7 @@ def draw_graph(graph, embedding, labels, path, s=25):
     #     s=s, zorder=2)
 
     pos = {n: emb for n, emb in zip(sorted(graph.nodes()), embedding)}
-    node_colours = np.array([colours[labels[n, 0]] for n in graph.nodes()])
+    node_colours = np.array([colours[labels[n, 0]] for n in graph.nodes()]) if labels is not None else None
     
     # bc  = nx.betweenness_centrality(graph)
     # node_sizes = np.array([(bc[n] + .05) * 50 for n in sorted(graph.nodes())])

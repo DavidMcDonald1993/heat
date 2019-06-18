@@ -22,7 +22,6 @@ from multiprocessing.pool import Pool
 import matplotlib.pyplot as plt
 
 from collections import Counter
-import gc
 
 def load_data(args):
 
@@ -32,6 +31,10 @@ def load_data(args):
 
 	graph = nx.read_weighted_edgelist(edgelist_filename, delimiter="\t", nodetype=int,
 		create_using=nx.DiGraph() if args.directed else nx.Graph())
+
+	print ("removing all edges with zero weight")
+	zero_weight_edges = [(u, v) for u, v, w in graph.edges(data="weight") if w == 0.]
+	graph.remove_edges_from(zero_weight_edges)
 
 	print ("ensuring all weights are positive")
 	nx.set_edge_attributes(graph, name="weight", values={edge: abs(weight) 

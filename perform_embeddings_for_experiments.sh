@@ -4,7 +4,7 @@ heat=/rds/projects/2018/hesz01/heat/main.py
 
 days=3
 hrs=00
-mem=10G
+mem=20G
 
 e=5
 
