@@ -33,7 +33,7 @@ do
 			cmd=$(echo python ${heat} --edgelist ${edgelist} --features ${features} --labels ${labels} \
 			--embedding ${embedding_dir} --walks ${walks_dir} --seed ${seed} --dim ${dim} -e ${e})
 				
-			for alpha in 00 05 10 20 50 80
+			for alpha in 00 05 10 20 50 
 			do
 
 				slurm_options=$(echo \
@@ -46,8 +46,9 @@ do
 
 				if [ ! -f $(printf "${embedding_dir}/alpha=0.${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e}) ]
 				then
-					echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha}
-					sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha})
+					echo ${cmd} --alpha 0.${alpha} not done
+					# echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha}
+					# sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha})
 				fi
 
 			done
@@ -62,8 +63,9 @@ do
 
 			if [ ! -f $(printf "${embedding_dir}/alpha=1.00/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e}) ]
 			then
-				echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0'
-				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0')
+				echo ${cmd} --alpha 1.0 not done
+				# echo -e submitting NC '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0'
+				# sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0')
 			fi
 		done
 	done
@@ -95,7 +97,7 @@ do
 			cmd=$(echo python ${heat} --edgelist ${edgelist} --features ${features} --labels ${labels} \
 			--embedding ${embedding_dir} --walks ${walks_dir} --seed ${seed} --dim ${dim} -e ${e})
 				
-			for alpha in 00 05 10 20 50 80
+			for alpha in 00 05 10 20 50 
 			do
 
 
@@ -109,8 +111,9 @@ do
 
 				if [ ! -f $(printf "${embedding_dir}/alpha=0.${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e}) ]
 				then
-					echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha}
-					sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha})
+					echo ${cmd} --alpha 0.${alpha} not done
+					# echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha}
+					# sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 0.'${alpha})
 				fi
 
 			done
@@ -125,8 +128,9 @@ do
 
 			if [ ! -f $(printf "${embedding_dir}/alpha=1.00/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e}) ]
 			then
-				echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0'
-				sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0')
+				echo ${cmd} --alpha 1.0 not done
+				# echo -e submitting LP '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0'
+				# sbatch ${slurm_options} <(echo -e '#!/bin/bash\n'${modules}'\n'${cmd}' --alpha 1.0')
 			fi
 		done
 	done

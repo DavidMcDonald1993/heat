@@ -27,7 +27,7 @@ labels=datasets/${dataset}/labels.csv
 output=edgelists/${dataset}
 
 edgelist_f=$(printf "${output}/seed=%03d/training_edges/edgelist.tsv" ${seed} )
-# echo $edgelist_f
+
 if [ ! -f $edgelist_f  ]
 then
 	module purge

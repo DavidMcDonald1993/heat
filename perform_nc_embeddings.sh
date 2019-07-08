@@ -3,7 +3,7 @@
 #SBATCH --job-name=embeddingsNC
 #SBATCH --output=embeddingsNC_%A_%a.out
 #SBATCH --error=embeddingsNC_%A_%a.err
-#SBATCH --array=0-4199
+#SBATCH --array=0-3599
 #SBATCH --time=3-00:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=16G
@@ -16,7 +16,7 @@ e=5
 datasets=({cora_ml,citeseer,ppi,pubmed,mit})
 dims=(5 10 25 50)
 seeds=({0..29})
-alphas=(00 05 10 20 50 80 100)
+alphas=(00 05 10 20 50 100)
 
 num_datasets=${#datasets[@]}
 num_dims=${#dims[@]}
