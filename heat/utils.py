@@ -294,17 +294,9 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		print ("selected negative samples")
 
-		for u, v in positive_samples:
-			assert (u, v) in graph.edges() or (v, u) in graph.edges()
-
-
 		return positive_samples, negative_samples
 
 	positive_samples, probs = determine_positive_samples_and_probs(graph, features, args)
-
-	for u, v in positive_samples:
-		assert (u, v) in graph.edges() or (v, u) in graph.edges()
-
 
 	if not args.use_generator:
 		print("training without generator -- selecting negative samples before training")
