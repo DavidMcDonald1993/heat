@@ -6,7 +6,7 @@ hrs=24
 mem=3
 
 # nc experiments
-for dataset in cora_ml citeseer ppi
+for dataset in cora_ml citeseer ppi pubmed mit
 do
 	for dim in 5 10 25 50
 	do	

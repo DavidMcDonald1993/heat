@@ -1,7 +1,6 @@
 import os
 os.environ["PYTHON_EGG_CACHE"] = "/rds/projects/2018/hesz01/poincare-embeddings/python-eggs"
 
-
 import numpy as np
 import networkx as nx
 import pandas as pd
@@ -25,8 +24,8 @@ def minkowki_dot(u, v):
 
 def hyperbolic_distance_hyperboloid(u, v):
 	mink_dp = minkowki_dot(u, v)
-	mink_dp = np.maximum(-1 - mink_dp, 1e-15)
-	return np.arccosh(1 + mink_dp)
+	mink_dp = np.maximum(-mink_dp, 1 + 1e-15)
+	return np.arccosh(mink_dp)
 
 def hyperbolic_distance_poincare(X):
 	norm_X = np.linalg.norm(X, keepdims=True, axis=-1)
@@ -34,6 +33,9 @@ def hyperbolic_distance_poincare(X):
 	uu = euclidean_distances(X) ** 2
 	dd = (1 - norm_X**2) * (1 - norm_X**2).T
 	return np.arccosh(1 + 2 * uu / dd)
+
+def euclidean_distance(X):
+	return euclidean_distances(X)
 
 def evaluate_rank_and_MAP(dists, edgelist, non_edgelist):
 	assert not isinstance(edgelist, dict)
@@ -130,7 +132,8 @@ def parse_args():
 
 	parser.add_argument("--seed", type=int, default=0)
 
-	parser.add_argument("--poincare", action="store_true")
+	parser.add_argument("--dist_fn", dest="dist_fn", type=str,
+		choices=["poincare", "hyperboloid", "euclidean"])
 
 	return parser.parse_args()
 
@@ -145,15 +148,23 @@ def main():
 	test_edgelist_fn = os.path.join(removed_edges_dir, "test_edges.tsv")
 	test_non_edgelist_fn = os.path.join(removed_edges_dir, "test_non_edges.tsv")
 
+	print ("loading test edges from {}".format(test_edgelist_fn))
+	print ("loading test non-edges from {}".format(test_non_edgelist_fn))
+
 	embedding_df = load_embedding(args.embedding_filename)
+	embedding_df = embedding_df.reindex(sorted(embedding_df.index))
 	# row 0 is embedding for node 0
 	# row 1 is embedding for node 1 etc...
 	embedding = embedding_df.values
 
-	if args.poincare:
+	dist_fn = args.dist_fn
+
+	if dist_fn == "poincare":
 		dists = hyperbolic_distance_poincare(embedding)
-	else:
+	elif dist_fn == "hyperboloid":
 		dists = hyperbolic_distance_hyperboloid(embedding, embedding)
+	else: 
+		dists = euclidean_distance(embedding)
 
 	test_edges = read_edgelist(test_edgelist_fn)
 	test_non_edges = read_edgelist(test_non_edgelist_fn)

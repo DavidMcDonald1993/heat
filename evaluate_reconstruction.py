@@ -36,6 +36,9 @@ def hyperbolic_distance_poincare(X):
 	dd = (1 - norm_X**2) * (1 - norm_X**2).T
 	return np.arccosh(1 + 2 * uu / dd)
 
+def euclidean_distance(X):
+	return euclidean_distances(X)
+
 def evaluate_rank_and_MAP(dists, edgelist, non_edgelist):
 	assert not isinstance(edgelist, dict)
 
@@ -127,8 +130,6 @@ def parse_args():
 	parser.add_argument("--labels", dest="labels", type=str, 
 		help="path to labels")
 
-	parser.add_argument('--directed', action="store_true", help='flag to train on directed graph')
-
 	parser.add_argument("--embedding", dest="embedding_filename",  
 		help="path of embedding to load.")
 
@@ -137,7 +138,8 @@ def parse_args():
 
 	parser.add_argument("--seed", type=int, default=0)
 
-	parser.add_argument("--poincare", action="store_true")
+	parser.add_argument("--dist_fn", dest="dist_fn", type=str,
+	choices=["poincare", "hyperboloid", "euclidean"])
 
 
 	return parser.parse_args()
@@ -147,19 +149,23 @@ def main():
 
 	args = parse_args()
 
-	graph, features, node_labels = load_data(args)
+	graph, _, _ = load_data(args)
 	print ("Loaded dataset")
 
 	embedding_df = load_embedding(args.embedding_filename)
-	embedding = embedding_df.values
+	embedding_df = embedding_df.reindex(sorted(embedding_df.index))	
 	# row 0 is embedding for node 0
 	# row 1 is embedding for node 1 etc...
 	embedding = embedding_df.values
 
-	if args.poincare:
+
+	dist_fn = args.dist_fn
+	if dist_fn == "poincare":
 		dists = hyperbolic_distance_poincare(embedding)
-	else:
+	elif dist_fn == "hyperboloid":
 		dists = hyperbolic_distance_hyperboloid(embedding, embedding)
+	else:
+		dists = euclidean_distance(embedding)
 
 	test_edges = list(graph.edges())
 	test_non_edges = list(nx.non_edges(graph))

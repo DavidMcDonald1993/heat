@@ -9,57 +9,54 @@ from sklearn.metrics import f1_score
 
 from skmultilearn.model_selection import IterativeStratification
 
-from heat.utils import load_data, hyperboloid_to_klein, load_embedding, poincare_ball_to_hyperboloid
+from heat.utils import load_data, hyperboloid_to_klein, load_embedding, poincare_ball_to_hyperboloid, hyperboloid_to_poincare_ball
 
 import functools
 import fcntl
 import argparse
 
-def hamming_score(y_true, y_pred, normalize=True, sample_weight=None):
-    '''
-    Compute the Hamming score (a.k.a. label-based accuracy) for the multi-label case
-    https://stackoverflow.com/q/32239577/395857
-    '''
-    acc_list = []
-    for i in range(y_true.shape[0]):
-        set_true = set( np.where(y_true[i])[0] )
-        set_pred = set( np.where(y_pred[i])[0] )
-        #print('\nset_true: {0}'.format(set_true))
-        #print('set_pred: {0}'.format(set_pred))
-        tmp_a = None
-        if len(set_true) == 0 and len(set_pred) == 0:
-            tmp_a = 1
-        else:
-            tmp_a = len(set_true.intersection(set_pred))/\
-                    float( len(set_true.union(set_pred)) )
-        #print('tmp_a: {0}'.format(tmp_a))
-        acc_list.append(tmp_a)
-    return np.mean(acc_list)
+# def hamming_score(y_true, y_pred, normalize=True, sample_weight=None):
+#     '''
+#     Compute the Hamming score (a.k.a. label-based accuracy) for the multi-label case
+#     https://stackoverflow.com/q/32239577/395857
+#     '''
+#     acc_list = []
+#     for i in range(y_true.shape[0]):
+#         set_true = set( np.where(y_true[i])[0] )
+#         set_pred = set( np.where(y_pred[i])[0] )
+#         tmp_a = None
+#         if len(set_true) == 0 and len(set_pred) == 0:
+#             tmp_a = 1
+#         else:
+#             tmp_a = len(set_true.intersection(set_pred))/\
+#                     float( len(set_true.union(set_pred)) )
+#         acc_list.append(tmp_a)
+#     return np.mean(acc_list)
 
-def evaluate_kfold_multilabel_classification(klein_embedding, labels, model,
-	n_repeats=10):
-	assert len(labels.shape) == 2
-	sss = IterativeStratification(n_splits=n_repeats, 
-		random_state=0,
-		order=2)
-	f1_micros = []
-	f1_macros = []
-	hammings = []
-	i = 1
-	for split_train, split_test in sss.split(klein_embedding, labels):
-		model.fit(klein_embedding[split_train], labels[split_train])		
-		predictions = model.predict(klein_embedding[split_test])
-		f1_micro = f1_score(labels[split_test], predictions, average="micro")
-		f1_macro = f1_score(labels[split_test], predictions, average="macro")
-		f1_micros.append(f1_micro)
-		f1_macros.append(f1_macro)
-		print ("Done {}/{} folds".format(i, n_repeats))
-		hamming = hamming_score(labels[split_test], predictions)
-		hammings.append(hamming)
-		i += 1
-	return None, np.mean(f1_micros), np.mean(f1_macros), np.mean(hammings)
+# def evaluate_kfold_multilabel_classification(klein_embedding, labels, model,
+# 	n_repeats=10):
+# 	assert len(labels.shape) == 2
+# 	sss = IterativeStratification(n_splits=n_repeats, 
+# 		random_state=0,
+# 		order=2)
+# 	f1_micros = []
+# 	f1_macros = []
+# 	hammings = []
+# 	i = 1
+# 	for split_train, split_test in sss.split(klein_embedding, labels):
+# 		model.fit(klein_embedding[split_train], labels[split_train])		
+# 		predictions = model.predict(klein_embedding[split_test])
+# 		f1_micro = f1_score(labels[split_test], predictions, average="micro")
+# 		f1_macro = f1_score(labels[split_test], predictions, average="macro")
+# 		f1_micros.append(f1_micro)
+# 		f1_macros.append(f1_macro)
+# 		print ("Done {}/{} folds".format(i, n_repeats))
+# 		hamming = hamming_score(labels[split_test], predictions)
+# 		hammings.append(hamming)
+# 		i += 1
+# 	return None, np.mean(f1_micros), np.mean(f1_macros), np.mean(hammings)
 
-def evaluate_node_classification(klein_embedding, labels,
+def evaluate_node_classification(embedding, labels,
 	label_percentages=np.arange(0.02, 0.11, 0.01), n_repeats=10):
 
 	print ("Evaluating node classification")
@@ -67,11 +64,16 @@ def evaluate_node_classification(klein_embedding, labels,
 	f1_micros = np.zeros((n_repeats, len(label_percentages)))
 	f1_macros = np.zeros((n_repeats, len(label_percentages)))
 	
-	model = LogisticRegressionCV()
+	model = LogisticRegressionCV(n_jobs=-1)
 
 	if labels.shape[1] == 1:
 		print ("single label clasification")
 		labels = labels.flatten()
+		# from sklearn.preprocessing import OneHotEncoder
+		# labels_ = OneHotEncoder().fit_transform(labels).A
+
+		# from hyperbolic_feedforward import build_hyperbolic_logistic_regression_model
+		# from keras.callbacks import EarlyStopping
 
 		split = StratifiedShuffleSplit
 
@@ -79,12 +81,19 @@ def evaluate_node_classification(klein_embedding, labels,
 		
 			for i, label_percentage in enumerate(label_percentages):
 
+				# model = build_hyperbolic_logistic_regression_model(klein_embedding.shape[1], 
+				# 	labels_.shape[1],
+				# 	euc_lr=1e-3, 
+				# 	hyp_lr=1e-2)
+
 				sss = split(n_splits=1, test_size=1-label_percentage, random_state=seed)
-				split_train, split_test = next(sss.split(klein_embedding, labels))
-				model.fit(klein_embedding[split_train], labels[split_train])
-				predictions = model.predict(klein_embedding[split_test])
-				f1_micro = f1_score(labels[split_test], predictions, average="micro")
-				f1_macro = f1_score(labels[split_test], predictions, average="macro")
+				split_train, split_test = next(sss.split(embedding, labels.flatten()))
+				model.fit(embedding[split_train], labels[split_train])
+				predictions = model.predict(embedding[split_test]).argmax(axis=-1)
+				f1_micro = f1_score(labels[split_test].flatten(), predictions, average="micro")
+				f1_macro = f1_score(labels[split_test].flatten(), predictions, average="macro")
+				print ("{:.02f}".format(label_percentage), f1_micro)
+
 				f1_micros[seed,i] = f1_micro
 				f1_macros[seed,i] = f1_macro
 			print ("completed repeat {}".format(seed+1))
@@ -100,9 +109,9 @@ def evaluate_node_classification(klein_embedding, labels,
 
 				sss = split(n_splits=2, order=3, random_state=seed,
 					sample_distribution_per_fold=[1.0-label_percentage, label_percentage])
-				split_train, split_test = next(sss.split(klein_embedding, labels))
-				model.fit(klein_embedding[split_train], labels[split_train])
-				predictions = model.predict(klein_embedding[split_test])
+				split_train, split_test = next(sss.split(embedding, labels))
+				model.fit(embedding[split_train], labels[split_train])
+				predictions = model.predict(embedding[split_test])
 				f1_micro = f1_score(labels[split_test], predictions, average="micro")
 				f1_macro = f1_score(labels[split_test], predictions, average="macro")
 				f1_micros[seed,i] = f1_micro
@@ -185,7 +194,8 @@ def parse_args():
 
 	parser.add_argument("--seed", type=int, default=0)
 
-	parser.add_argument("--poincare", action="store_true")
+	parser.add_argument("--dist_fn", dest="dist_fn", type=str,
+	choices=["poincare", "hyperboloid", "euclidean"])
 
 	return parser.parse_args()
 
@@ -193,17 +203,25 @@ def main():
 
 	args = parse_args()
 
-	graph, features, node_labels = load_data(args)
+	_, _, node_labels = load_data(args)
 	print ("Loaded dataset")
 
 	embedding_df = load_embedding(args.embedding_filename)
+	embedding_df = embedding_df.reindex(sorted(embedding_df.index))
 	embedding = embedding_df.values
 
-	if args.poincare:
+	# project to a space with straight euclidean lines
+	dist_fn = args.dist_fn
+	if dist_fn == "poincare":
 		embedding = poincare_ball_to_hyperboloid(embedding)
-	klein_embedding = hyperboloid_to_klein(embedding)
+		embedding = hyperboloid_to_klein(embedding)
+	elif dist_fn == "hyperboloid":
+		embedding = hyperboloid_to_klein(embedding)
 
-	label_percentages, f1_micros, f1_macros = evaluate_node_classification(klein_embedding, node_labels)
+	# assert (np.linalg.norm(klein_embedding, axis=-1) < 1) .all() 
+
+	label_percentages, f1_micros, f1_macros = \
+		evaluate_node_classification(embedding, node_labels)
 
 	test_results = {}
 	for label_percentage, f1_micro, f1_macro in zip(label_percentages, f1_micros, f1_macros):
@@ -221,7 +239,6 @@ def main():
 
 	print ("saving test results to {}".format(test_results_filename))
 	threadsafe_save_test_results(test_results_lock_filename, test_results_filename, args.seed, data=test_results )
-
 	
 if __name__ == "__main__":
 	main()

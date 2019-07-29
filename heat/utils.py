@@ -239,7 +239,7 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 			context_size = args.context_size
 			directed = args.directed
-			
+
 			positive_samples = []
 
 			counts = np.zeros(N)
@@ -258,6 +258,9 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 						positive_samples.append((u, v))
 						positive_samples.append((v, u))
+
+						assert (u, v) in graph.edges
+						assert (v, u) in graph.edges
 
 						negative_samples[u, v] = 0
 						negative_samples[v, u] = 0
@@ -280,6 +283,7 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		print ("PREPROCESSED NEGATIVE SAMPLE PROBABILTIES")
 
+
 		print ("SORTING POSITIVE SAMPLES")
 		positive_samples = np.array(positive_samples)
 		idx = positive_samples[:,0].argsort()
@@ -299,9 +303,17 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		print ("selected negative samples")
 
+		for u, v in positive_samples:
+			assert (u, v) in graph.edges() or (v, u) in graph.edges()
+
+
 		return positive_samples, negative_samples
 
 	positive_samples, probs = determine_positive_samples_and_probs(graph, features, args)
+
+	for u, v in positive_samples:
+		assert (u, v) in graph.edges() or (v, u) in graph.edges()
+
 
 	if not args.use_generator:
 		print("training without generator -- selecting negative samples before training")

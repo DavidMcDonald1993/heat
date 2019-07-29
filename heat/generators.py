@@ -6,14 +6,16 @@ import scipy as sp
 
 from keras.utils import Sequence
 
-def hyperbolic_distance(u, v):
-	mink_dp = u[:,:-1].dot(v[:,:-1].T) - u[:,-1:] * v[:,-1:].T
-	mink_dp = np.maximum(-mink_dp, 1 + 1e-15)
-	return np.arccosh(mink_dp)
+# def hyperbolic_distance(u, v):
+# 	mink_dp = u[:,:-1].dot(v[:,:-1].T) - u[:,-1:] * v[:,-1:].T
+# 	mink_dp = np.maximum(-mink_dp, 1 + 1e-15)
+# 	return np.arccosh(mink_dp)
 
 class TrainingDataGenerator(Sequence):
 
 	def __init__(self, positive_samples, probs, model, args):
+		idx = np.random.permutation(len(positive_samples))
+		self.positive_samples = positive_samples[idx]
 		self.positive_samples = positive_samples
 		self.probs = probs
 		self.batch_size = args.batch_size

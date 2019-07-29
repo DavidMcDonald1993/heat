@@ -364,11 +364,11 @@ def main():
 			embedding_directory=args.embedding_path)
 	]			
 
-	positive_samples, negative_samples, probs =\
-			determine_positive_and_negative_samples(graph, features, args)
+	positive_samples, negative_samples, probs = \
+			determine_positive_and_negative_samples(graph, 
+			features, args)
 
-	features = None # remove features reference to free up memory
-	gc.collect()
+	del features # remove features reference to free up memory
 
 	if args.use_generator:
 		print ("Training with data generator with {} worker threads".format(args.workers))
@@ -410,8 +410,10 @@ def main():
 		if embedding.shape[1] == 3:
 			print ("projecting to poincare ball")
 			embedding = hyperboloid_to_poincare_ball(embedding)
-		draw_graph(graph,#undirected_edges if not args.directed else directed_edges, 
-			embedding, node_labels, path="2d-poincare-disk-visualisation.png")
+		draw_graph(graph, 
+			embedding, 
+			node_labels, 
+			path="2d-poincare-disk-visualisation.png")
 
 if __name__ == "__main__":
 	main()

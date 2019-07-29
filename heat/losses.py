@@ -29,7 +29,7 @@ def hyperbolic_softmax_loss(sigma=1.):
         target_nodes_embedding = y_pred[:,1:]
         
         inner_uv = minkowski_dot(source_node_embedding, target_nodes_embedding) 
-        inner_uv = -inner_uv #+ 1e-14
+        inner_uv = -inner_uv
         inner_uv = K.maximum(inner_uv, 1. + K.epsilon())
 
         d_uv = tf.acosh(inner_uv) 
