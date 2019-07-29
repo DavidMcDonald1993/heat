@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH --job-name=evaluateLP
-#SBATCH --output=evaluateLP_%A_%a.out
-#SBATCH --error=evaluateLP_%A_%a.err
+#SBATCH --job-name=evaluateRECON
+#SBATCH --output=evaluateRECON_%A_%a.out
+#SBATCH --error=evaluateRECON_%A_%a.err
 #SBATCH --array=0-3599
 #SBATCH --time=3-00:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=16G
+#SBATCH --mem=32G
 #SBATCH --mail-type ALL
 
 # heat=/rds/projects/2018/hesz01/heat/main.py
@@ -41,8 +41,8 @@ fi
 
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv
-features=${data_dir}/feats.csv
-labels=${data_dir}/labels.csv
+# features=${data_dir}/feats.csv
+# labels=${data_dir}/labels.csv
 embedding_dir=embeddings/${dataset}/nc_experiment
 # walks_dir=walks/${dataset}/lp_experiment
 # output=edgelists/${dataset}
@@ -51,7 +51,7 @@ test_results=$(printf "test_results/${dataset}/reconstruction_experiment/alpha=$
 embedding_f=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e})
 echo $embedding_f
 
-args=$(echo --output ${output} --dist_fn hyperboloid \
+args=$(echo --edgelist ${edgelist} --dist_fn hyperboloid \
     --embedding ${embedding_f} --seed ${seed} \
     --test-results-dir ${test_results})
 echo $args

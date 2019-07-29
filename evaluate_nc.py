@@ -185,7 +185,6 @@ def parse_args():
 
 	parser.add_argument('--directed', action="store_true", help='flag to train on directed graph')
 
-
 	parser.add_argument("--embedding", dest="embedding_filename",  
 		help="path of embedding to load.")
 

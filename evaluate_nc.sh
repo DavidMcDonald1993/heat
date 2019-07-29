@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=evaluateLP
-#SBATCH --output=evaluateLP_%A_%a.out
-#SBATCH --error=evaluateLP_%A_%a.err
+#SBATCH --job-name=evaluateNC
+#SBATCH --output=evaluateNC_%A_%a.out
+#SBATCH --error=evaluateNC_%A_%a.err
 #SBATCH --array=0-3599
 #SBATCH --time=3-00:00:00
 #SBATCH --ntasks=1
@@ -39,25 +39,28 @@ else
 	alpha=0.$alpha
 fi
 
-# data_dir=datasets/${dataset}
-# edgelist=${data_dir}/edgelist.tsv
-# features=${data_dir}/feats.csv
-# labels=${data_dir}/labels.csv
-embedding_dir=embeddings/${dataset}/lp_experiment
+data_dir=datasets/${dataset}
+edgelist=${data_dir}/edgelist.tsv
+features=${data_dir}/feats.csv
+labels=${data_dir}/labels.csv
+embedding_dir=embeddings/${dataset}/nc_experiment
 # walks_dir=walks/${dataset}/lp_experiment
-output=edgelists/${dataset}
+# output=edgelists/${dataset}
 
 test_results=$(printf "test_results/${dataset}/lp_experiment/alpha=${alpha}/dim=%03d/" ${dim})
 embedding_f=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e})
 echo $embedding_f
 
-args=$(echo --output ${output} --dist_fn hyperboloid \
+args=$(echo --edgelist ${edgelist} --labels ${labels} \
+    --dist_fn hyperboloid \
     --embedding ${embedding_f} --seed ${seed} \
     --test-results-dir ${test_results})
 echo $args
 
-module purge
-module load bluebear
-module load apps/python3/3.5.2
+module purge\; \
+module load bluebear\; \
+module load Python/3.6.3-iomkl-2018a\; \
+pip install --user numpy pandas networkx scikit-learn scikit-multilearn\; \
+)
 
-python evaluate_lp.py ${args}
+python evaluate_nc.py ${args}
