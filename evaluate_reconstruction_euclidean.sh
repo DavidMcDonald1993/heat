@@ -8,50 +8,40 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=32G
 
-# heat=/rds/projects/2018/hesz01/heat/main.py
-e=5
-
 datasets=({cora_ml,citeseer,ppi,pubmed,mit})
 dims=(5 10 25 50)
 seeds=({0..29})
-alphas=(00 05 10 20 50 100)
+methods=(abrw attrpure deepwalk tadw aane sagegcn)
 exp=reconstruction_experiment
 
 num_datasets=${#datasets[@]}
 num_dims=${#dims[@]}
 num_seeds=${#seeds[@]}
-num_alphas=${#alphas[@]}
+num_methods=${#methods[@]}
 
-dataset_id=$((SLURM_ARRAY_TASK_ID / (num_alphas * num_seeds * num_dims) % num_datasets))
-dim_id=$((SLURM_ARRAY_TASK_ID / (num_alphas * num_seeds) % num_dims))
-seed_id=$((SLURM_ARRAY_TASK_ID / num_alphas % num_seeds ))
-alpha_id=$((SLURM_ARRAY_TASK_ID % (num_alphas) ))
+dataset_id=$((SLURM_ARRAY_TASK_ID / (num_methods * num_seeds * num_dims) % num_datasets))
+dim_id=$((SLURM_ARRAY_TASK_ID / (num_methods * num_seeds) % num_dims))
+seed_id=$((SLURM_ARRAY_TASK_ID / num_methods % num_seeds))
+method_id=$((SLURM_ARRAY_TASK_ID % num_methods))
 
 dataset=${datasets[$dataset_id]}
 dim=${dims[$dim_id]}
 seed=${seeds[$seed_id]}
-alpha=${alphas[$alpha_id]}
-
-if [ $alpha -eq 100 ];
-then
-	alpha=1.00
-else
-	alpha=0.$alpha
-fi
+method=${methods[$method_id]}
 
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv
-# features=${data_dir}/feats.csv
-# labels=${data_dir}/labels.csv
-embedding_dir=embeddings/${dataset}/nc_experiment
+features=${data_dir}/feats.csv
+labels=${data_dir}/labels.csv
+embedding_dir=$(echo ../OpenANE/embeddings/${dataset}/nc_experiment/${dim}/${method}/${seed})
 # walks_dir=walks/${dataset}/lp_experiment
 # output=edgelists/${dataset}
 
-test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" ${dim})
-embedding_f=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e})
+test_results=$(printf "test_results/${dataset}/${exp}/${method}/dim=%03d/" ${dim})
+embedding_f=$(printf "${embedding_dir}/embedding.csv" ${dim} ${seed})
 echo $embedding_f
 
-args=$(echo --edgelist ${edgelist} --dist_fn hyperboloid \
+args=$(echo --edgelist ${edgelist} --dist_fn euclidean \
     --embedding ${embedding_f} --seed ${seed} \
     --test-results-dir ${test_results})
 echo $args

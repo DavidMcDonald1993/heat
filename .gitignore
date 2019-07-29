@@ -13,6 +13,7 @@ embeddings/
 test_results/
 walks/
 __pycache__/
+heat/__pycache__/
 no_walks_reconstruction.sh
 perform_embeddings_for_experiments.sh
 evaluate_script.sh

@@ -7,7 +7,6 @@
 #SBATCH --time=3-00:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=32G
-#SBATCH --mail-type ALL
 
 # heat=/rds/projects/2018/hesz01/heat/main.py
 e=5

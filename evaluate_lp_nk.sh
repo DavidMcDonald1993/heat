@@ -3,11 +3,10 @@
 #SBATCH --job-name=evaluateLP
 #SBATCH --output=evaluateLP_%A_%a.out
 #SBATCH --error=evaluateLP_%A_%a.err
-#SBATCH --array=0-3599
+#SBATCH --array=0-599
 #SBATCH --time=3-00:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=32G
-#SBATCH --mail-type ALL
 
 # heat=/rds/projects/2018/hesz01/heat/main.py
 # e=5
@@ -23,7 +22,7 @@ num_seeds=${#seeds[@]}
 
 dataset_id=$((SLURM_ARRAY_TASK_ID / (num_seeds * num_dims) % num_datasets))
 dim_id=$((SLURM_ARRAY_TASK_ID / num_seeds % num_dims))
-seed_id=$((SLURM_ARRAY_TASK_ID num_seeds ))
+seed_id=$((SLURM_ARRAY_TASK_ID % num_seeds ))
 
 dataset=${datasets[$dataset_id]}
 dim=${dims[$dim_id]}
