@@ -219,35 +219,24 @@ def determine_positive_and_negative_samples(graph, features, args):
 		negative_samples = np.ones((N, N), dtype=bool)
 		# np.fill_diagonal(negative_samples, 0)
 
-		if args.no_walks:
+		positive_samples = list(graph.edges())
+		positive_samples += [(v, u) for (u, v) in positive_samples]
+		
+		for n in sorted(graph.nodes()):
+			negative_samples[n, list(graph.neighbors(n))] = 0
 
-			print ("using only edges as positive samples")
 
-			positive_samples = list(graph.edges())
-			positive_samples += [(v, u) for (u, v) in positive_samples]
-
-			for n in sorted(graph.nodes()):
-				negative_samples[n, list(graph.neighbors(n))] = 0
-
-			counts = np.array([graph.degree(n) for n in sorted(nodes)])
-
-		else:
+		if not args.no_walks:
 
 			print ("determining positive and negative samples using random walks")
 
 			walks = perform_walks(graph, features, args)
 
 			context_size = args.context_size
-			directed = args.directed
-
-			positive_samples = []
-
-			counts = np.zeros(N)
 
 			for num_walk, walk in enumerate(walks):
 				for i in range(len(walk)):
 					u = walk[i]
-					counts[u] += 1	
 					for j in range(context_size):
 
 						if i+j+1 >= len(walk):
@@ -259,9 +248,6 @@ def determine_positive_and_negative_samples(graph, features, args):
 						positive_samples.append((u, v))
 						positive_samples.append((v, u))
 
-						assert (u, v) in graph.edges
-						assert (v, u) in graph.edges
-
 						negative_samples[u, v] = 0
 						negative_samples[v, u] = 0
 
@@ -271,6 +257,12 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		print ("DETERMINED POSITIVE AND NEGATIVE SAMPLES")
 		print ("found {} positive sample pairs".format(len(positive_samples)))
+
+		counts = np.zeros(N)
+
+		for u, v in positive_samples:
+			counts[u] += 1
+			counts[v] += 1
 
 		counts = counts ** 0.75
 		# counts = np.ones_like(counts)
@@ -282,7 +274,6 @@ def determine_positive_and_negative_samples(graph, features, args):
 		probs = probs.cumsum(axis=-1)
 
 		print ("PREPROCESSED NEGATIVE SAMPLE PROBABILTIES")
-
 
 		print ("SORTING POSITIVE SAMPLES")
 		positive_samples = np.array(positive_samples)
