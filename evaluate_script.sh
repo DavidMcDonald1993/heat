@@ -4,6 +4,7 @@ heat=/rds/projects/2018/hesz01/heat/main.py
 
 hrs=24
 mem=3
+e=5
 
 # nc experiments
 for dataset in cora_ml citeseer ppi pubmed mit
@@ -33,7 +34,7 @@ do
 			for alpha in 00 05 10 20 50 
 			do
 
-				embedding=$(printf "embeddings/${dataset}/nc_experiment/alpha=0.${alpha}/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim})
+				embedding=$(printf "embeddings/${dataset}/nc_experiment/alpha=0.${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e})
 				# test_results=$(printf "test_results/${dataset}/nc_experiment/alpha=0.${alpha}/dim=%03d/" ${dim})
 
 				# slurm_options=$(echo \
@@ -69,7 +70,7 @@ do
 
 			done
 
-			embedding=$(printf "embeddings/${dataset}/nc_experiment/alpha=1.00/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim})
+			embedding=$(printf "embeddings/${dataset}/nc_experiment/alpha=1.00/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e})
 			# test_results=$(printf "test_results/${dataset}/nc_experiment/alpha=1.00/dim=%03d/" ${dim})
 
 			# slurm_options=$(echo \
@@ -128,7 +129,7 @@ do
 			for alpha in 00 05 10 20 50 
 			do
 
-				embedding=$(printf "embeddings/${dataset}/lp_experiment/alpha=0.${alpha}/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim})
+				embedding=$(printf "embeddings/${dataset}/lp_experiment/alpha=0.${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e})
 				# test_results=$(printf "test_results/${dataset}/lp_experiment/alpha=0.${alpha}/dim=%03d/" ${dim})
 
 				# slurm_options=$(echo \
@@ -149,7 +150,7 @@ do
 			done
 
 			
-			embedding=$(printf "embeddings/${dataset}/lp_experiment/alpha=1.00/seed=%03d/dim=%03d/embedding.csv" ${seed} ${dim})
+			embedding=$(printf "embeddings/${dataset}/lp_experiment/alpha=1.00/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e})
 			# test_results=$(printf "test_results/${dataset}/lp_experiment/alpha=1.00/dim=%03d/" ${dim})
 
 			# slurm_options=$(echo \
