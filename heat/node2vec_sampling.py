@@ -41,8 +41,8 @@ class Graph():
 		alias_edges = self.alias_edges
 		feature_sim = self.feature_sim
 
-		if feature_sim is not None:
-			N = len(feature_sim)
+		# if feature_sim is not None:
+		# 	N = len(feature_sim)
 
 		jump = False
 		preprocessed_edges = alias_edges is not None
@@ -59,7 +59,6 @@ class Graph():
 				and not (feature_sim[cur]<1e-15).all() 
 				and (np.random.rand() < self.alpha or len(cur_nbrs) == 0)):
 				# random jump based on attribute similarity
-				# next_ = np.random.choice(N, replace=False, p=feature_sim[cur])
 				next_ = np.searchsorted(feature_sim[cur], np.random.rand())
 				walk.append(next_)
 				jump = True
@@ -94,7 +93,7 @@ class Graph():
 		# 	nodes *= num_walks
 		# 	walks = p.map(functools.partial(self.node2vec_walk, walk_length=walk_length), nodes)
 
-		for walk_iter in range(num_walks):
+		for _ in range(num_walks):
 			random.shuffle(nodes)
 			for node in nodes:
 				walks.append(self.node2vec_walk(node, walk_length=walk_length, ))
@@ -145,8 +144,6 @@ class Graph():
 		print ("preprocessing transition probs")
 		graph = self.graph
 		is_directed = self.is_directed
-
-		# alias_nodes = {}
 
 		print ("preprocessing nodes")
 

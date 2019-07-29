@@ -16,6 +16,7 @@ datasets=({cora_ml,citeseer,ppi,pubmed,mit})
 dims=(5 10 25 50)
 seeds=({0..29})
 alphas=(00 05 10 20 50 100)
+exp=lp_experiment
 
 num_datasets=${#datasets[@]}
 num_dims=${#dims[@]}
@@ -43,11 +44,11 @@ fi
 # edgelist=${data_dir}/edgelist.tsv
 # features=${data_dir}/feats.csv
 # labels=${data_dir}/labels.csv
-embedding_dir=embeddings/${dataset}/lp_experiment
+embedding_dir=embeddings/${dataset}/${exp}
 # walks_dir=walks/${dataset}/lp_experiment
 output=edgelists/${dataset}
 
-test_results=$(printf "test_results/${dataset}/lp_experiment/alpha=${alpha}/dim=%03d/" ${dim})
+test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" ${dim})
 embedding_f=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e})
 echo $embedding_f
 

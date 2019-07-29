@@ -130,6 +130,8 @@ def parse_args():
 	parser.add_argument("--test-results-dir", dest="test_results_dir",  
 		help="path to save results.")
 
+	parser.add_argument('--directed', action="store_true", help='flag to train on directed graph')
+
 	parser.add_argument("--seed", type=int, default=0)
 
 	parser.add_argument("--dist_fn", dest="dist_fn", type=str,
