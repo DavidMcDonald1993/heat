@@ -57,7 +57,7 @@ then
 	module load apps/python3/3.5.2
 	module load apps/keras/2.0.8-python-3.5.2
 
-	args=$(echo -edgelist ${edgelist} --features ${features} --labels ${labels} \
+	args=$(echo --edgelist ${edgelist} --features ${features} --labels ${labels} \
 	--embedding ${embedding_dir} --walks ${walks_dir} --seed ${seed} --dim ${dim} \
 	--alpha ${alpha} -e ${e})
 
