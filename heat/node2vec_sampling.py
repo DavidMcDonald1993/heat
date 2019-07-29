@@ -109,7 +109,7 @@ class Graph():
 		graph = self.graph
 
 		unnormalized_probs = [abs(graph[node][nbr]['weight']) for nbr in sorted(graph.neighbors(node))]
-		norm_const = sum(unnormalized_probs)
+		norm_const = sum(unnormalized_probs) + 1e-7
 		normalized_probs =  [float(u_prob)/norm_const for u_prob in unnormalized_probs]
 
 		return node, alias_setup(normalized_probs)
@@ -132,7 +132,7 @@ class Graph():
 				unnormalized_probs.append(abs(graph[dst][dst_nbr]['weight']))
 			else:
 				unnormalized_probs.append(abs(graph[dst][dst_nbr]['weight'])/q)
-		norm_const = sum(unnormalized_probs)
+		norm_const = sum(unnormalized_probs) + 1e-7
 		normalized_probs =  [float(u_prob)/norm_const for u_prob in unnormalized_probs]
 
 		return edge, alias_setup(normalized_probs)
