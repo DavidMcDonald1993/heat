@@ -147,8 +147,9 @@ class Graph():
 
 		print ("preprocessing nodes")
 
-		with Pool(processes=None) as p:
-			alias_nodes = p.map(self.get_alias_node, graph.nodes())
+		# with Pool(processes=None) as p:
+		# 	alias_nodes = p.map(self.get_alias_node, graph.nodes())
+		alias_nodes = (self.get_alias_node(node) for node in graph.nodes())
 		alias_nodes = {node: alias_node for node, alias_node in alias_nodes}
 
 		print ("preprocessed all nodes")
@@ -161,8 +162,9 @@ class Graph():
 		if self.p != 1 or self.q != 1:
 			print ("preprocessing edges")
 
-			with Pool(processes=None) as p:
-				alias_edges = p.map(self.get_alias_edge, edges)
+			# with Pool(processes=None) as p:
+				# alias_edges = p.map(self.get_alias_edge, edges)
+			alias_nodes = (self.get_alias_edge(edge) for edge in edges)
 			alias_edges = {edge: alias_edge for edge, alias_edge in alias_edges}
 
 			print ("preprocessed all edges")

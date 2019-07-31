@@ -147,62 +147,62 @@ def alias_draw(J, q, size=1):
 	kk[idx] = J[kk[idx]]
 	return kk
 
-def convert_edgelist_to_dict(edgelist, undirected=True, self_edges=False):
-	if edgelist is None:
-		return None
-	if undirected:
-		edgelist += [(v, u) for u, v in edgelist]
-	edge_dict = {}
-	for u, v in edgelist:
-		if self_edges:
-			default = set(u)
-		else:
-			default = set()
-		edge_dict.setdefault(u, default).add(v)
-	edge_dict = {k: list(v) for k, v in edge_dict.items()}
+# def convert_edgelist_to_dict(edgelist, undirected=True, self_edges=False):
+# 	if edgelist is None:
+# 		return None
+# 	if undirected:
+# 		edgelist += [(v, u) for u, v in edgelist]
+# 	edge_dict = {}
+# 	for u, v in edgelist:
+# 		if self_edges:
+# 			default = set(u)
+# 		else:
+# 			default = set()
+# 		edge_dict.setdefault(u, default).add(v)
+# 	edge_dict = {k: list(v) for k, v in edge_dict.items()}
 
-	return edge_dict
+# 	return edge_dict
 
-def get_training_sample(samples, num_negative_samples, ):
-	positive_sample_pair, probs = samples
-	negative_samples_ = np.random.choice(len(probs), replace=True, size=num_negative_samples, p=probs)
-	return np.append(positive_sample_pair, negative_samples_, )
+# def get_training_sample(samples, num_negative_samples, ):
+# 	positive_sample_pair, probs = samples
+# 	negative_samples_ = np.random.choice(len(probs), replace=True, size=num_negative_samples, p=probs)
+# 	return np.append(positive_sample_pair, negative_samples_, )
 
-def build_training_samples(positive_samples, negative_samples, num_negative_samples, alias_dict):
-	input_nodes = positive_samples[:,0]
-	print ("Building training samples")
+# def build_training_samples(positive_samples, negative_samples, num_negative_samples, alias_dict):
+# 	input_nodes = positive_samples[:,0]
+# 	print ("Building training samples")
 	
-	with Pool(processes=2) as p:
-		training_samples = p.map(functools.partial(get_training_sample,
-			num_negative_samples=num_negative_samples,
-			),
-			zip(positive_samples,
-				# (negative_samples[u] for u in input_nodes),
-				(alias_dict[u] for u in input_nodes)))
-	return np.array(training_samples)
+# 	with Pool(processes=2) as p:
+# 		training_samples = p.map(functools.partial(get_training_sample,
+# 			num_negative_samples=num_negative_samples,
+# 			),
+# 			zip(positive_samples,
+# 				# (negative_samples[u] for u in input_nodes),
+# 				(alias_dict[u] for u in input_nodes)))
+# 	return np.array(training_samples)
 
-def create_second_order_topology_graph(topology_graph, args):
+# def create_second_order_topology_graph(topology_graph, args):
 
-	adj = nx.adjacency_matrix(topology_graph).A
-	adj_sim = cosine_similarity(adj)
-	adj_sim -= np.identity(len(topology_graph))
-	adj_sim [adj_sim  < args.rho] = 0
-	second_order_topology_graph = nx.from_numpy_matrix(adj_sim)
+# 	adj = nx.adjacency_matrix(topology_graph).A
+# 	adj_sim = cosine_similarity(adj)
+# 	adj_sim -= np.identity(len(topology_graph))
+# 	adj_sim [adj_sim  < args.rho] = 0
+# 	second_order_topology_graph = nx.from_numpy_matrix(adj_sim)
 
-	print ("Created second order topology graph graph with {} edges".format(len(second_order_topology_graph.edges())))
+# 	print ("Created second order topology graph graph with {} edges".format(len(second_order_topology_graph.edges())))
 
-	return second_order_topology_graph
+# 	return second_order_topology_graph
 
-def create_feature_graph(features, args):
+# def create_feature_graph(features, args):
 
-	features_sim = cosine_similarity(features)
-	features_sim -= np.identity(len(features))
-	features_sim [features_sim  < args.rho] = 0
-	feature_graph = nx.from_numpy_matrix(features_sim)
+# 	features_sim = cosine_similarity(features)
+# 	features_sim -= np.identity(len(features))
+# 	features_sim [features_sim  < args.rho] = 0
+# 	feature_graph = nx.from_numpy_matrix(features_sim)
 
-	print ("Created feature correlation graph with {} edges".format(len(feature_graph.edges())))
+# 	print ("Created feature correlation graph with {} edges".format(len(feature_graph.edges())))
 
-	return feature_graph
+# 	return feature_graph
 
 def determine_positive_and_negative_samples(graph, features, args):
 
@@ -265,7 +265,6 @@ def determine_positive_and_negative_samples(graph, features, args):
 			counts[v] += 1
 
 		counts = counts ** 0.75
-		# counts = np.ones_like(counts)
 		probs = counts[None, :] 
 
 		probs = probs * negative_samples
@@ -285,11 +284,12 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 	def select_negative_samples(positive_samples, probs, num_negative_samples):
 
-		with Pool(processes=None) as p:
-			negative_samples = p.map(functools.partial(choose_negative_samples,
-			num_negative_samples=num_negative_samples), 
-			((u, count, probs[u]) for u, count in Counter(positive_samples[:,0]).items()))
-
+		# with Pool(processes=None) as p:
+		# 	negative_samples = p.map(functools.partial(choose_negative_samples,
+		# 	num_negative_samples=num_negative_samples), 
+		# 	((u, count, probs[u]) for u, count in Counter(positive_samples[:,0]).items()))
+		negative_samples = (choose_negative_samples(x, num_negative_samples) 
+			for x in ((u, count, probs[u]) for u, count in Counter(positive_samples[:,0]).items()))
 		negative_samples = np.concatenate([arr for _, arr in sorted(negative_samples, key=lambda x: x[0])], axis=0,)
 
 		print ("selected negative samples")
