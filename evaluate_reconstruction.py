@@ -217,8 +217,8 @@ def main():
 	else:
 		dists = euclidean_distance(embedding)
 
-	test_edges = list(graph.edges())
-	test_non_edges = list(nx.non_edges(graph))
+	test_edges = np.array(list(graph.edges()))
+	test_non_edges = np.array(list(nx.non_edges(graph)))
 
 	np.random.seed(args.seed)
 	idx = np.random.permutation(len(test_non_edges))[:len(test_edges)]
