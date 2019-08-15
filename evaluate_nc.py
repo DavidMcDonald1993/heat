@@ -204,13 +204,20 @@ def main():
 
 	_, _, node_labels = load_data(args)
 	print ("Loaded dataset")
+	dist_fn = args.dist_fn
 
-	embedding_df = load_embedding(args.embedding_filename)
+	sep = ","
+	header = "infer"
+	if dist_fn == "euclidean":
+		sep = " "
+		header = None
+
+	embedding_df = pd.read_csv(args.embedding_filename,
+		sep=sep, header=header)
 	embedding_df = embedding_df.reindex(sorted(embedding_df.index))
 	embedding = embedding_df.values
 
 	# project to a space with straight euclidean lines
-	dist_fn = args.dist_fn
 	if dist_fn == "poincare":
 		embedding = poincare_ball_to_hyperboloid(embedding)
 		embedding = hyperboloid_to_klein(embedding)
