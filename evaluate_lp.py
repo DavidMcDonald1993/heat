@@ -153,13 +153,20 @@ def main():
 	print ("loading test edges from {}".format(test_edgelist_fn))
 	print ("loading test non-edges from {}".format(test_non_edgelist_fn))
 
-	embedding_df = load_embedding(args.embedding_filename)
+	dist_fn = args.dist_fn
+
+	sep = ","
+	header = "infer"
+	if dist_fn == "euclidean":
+		sep = " "
+		header = None
+
+	embedding_df = pd.read_csv(args.embedding_filename,
+		sep=sep, header=header)
 	embedding_df = embedding_df.reindex(sorted(embedding_df.index))
 	# row 0 is embedding for node 0
 	# row 1 is embedding for node 1 etc...
 	embedding = embedding_df.values
-
-	dist_fn = args.dist_fn
 
 	if dist_fn == "poincare":
 		dists = hyperbolic_distance_poincare(embedding)
