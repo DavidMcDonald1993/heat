@@ -193,15 +193,23 @@ def main():
 
 	graph, _, _ = load_data(args)
 	print ("Loaded dataset")
+	
+	dist_fn = args.dist_fn
 
-	embedding_df = load_embedding(args.embedding_filename)
+	sep = ","
+	header = "infer"
+	if dist_fn == "euclidean":
+		sep = " "
+		header = None
+
+	embedding_df = pd.read_csv(args.embedding_filename,
+		sep=sep, header=header)
 	embedding_df = embedding_df.reindex(sorted(embedding_df.index))	
 	# row 0 is embedding for node 0
 	# row 1 is embedding for node 1 etc...
 	embedding = embedding_df.values
 
 
-	dist_fn = args.dist_fn
 	if dist_fn == "poincare":
 		dists = hyperbolic_distance_poincare(embedding)
 	elif dist_fn == "hyperboloid":
@@ -233,7 +241,7 @@ def main():
 
 	test_results.update({"map_recon": map_reconstruction})
 
-	for k in (3, 5, 10):
+	for k in (1, 3, 5, 10):
 		precision_at_k = evaluate_precision_at_k(scores, 
 		test_edges, test_non_edges, k=k)
 		test_results.update({"precision_{}".format(k): precision_at_k})
