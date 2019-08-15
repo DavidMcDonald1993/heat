@@ -221,7 +221,7 @@ def main():
 	test_non_edges = list(nx.non_edges(graph))
 
 	np.random.seed(args.seed)
-	idx = np.random.permutation(np.arange(len(test_non_edges), dtype=int))[:len(test_edges)]
+	idx = np.random.permutation(len(test_non_edges))[:len(test_edges)]
 	test_non_edges = test_non_edges[idx]
 
 	test_results = dict()
