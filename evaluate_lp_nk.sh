@@ -32,7 +32,7 @@ seed=${seeds[$seed_id]}
 # edgelist=${data_dir}/edgelist.tsv
 # features=${data_dir}/feats.csv
 # labels=${data_dir}/labels.csv
-embedding_dir=../poincare_embeddings/embeddings/${dataset}
+embedding_dir=../poincare-embeddings/embeddings/${dataset}
 # walks_dir=walks/${dataset}/lp_experiment
 output=edgelists/${dataset}
 
