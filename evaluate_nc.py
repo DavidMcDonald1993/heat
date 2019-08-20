@@ -79,11 +79,8 @@ def evaluate_node_classification(embedding, labels,
 				sss = split(n_splits=1, test_size=1-label_percentage, random_state=seed)
 				split_train, split_test = next(sss.split(embedding, labels.flatten()))
 				
-				print (split_train.shape, split_test.shape)
-				
 				model.fit(embedding[split_train], labels[split_train])
-				predictions = model.predict(embedding[split_test]).argmax(axis=-1)
-				print (predictions.shape)
+				predictions = model.predict(embedding[split_test])
 				f1_micro = f1_score(labels[split_test], predictions, average="micro")
 				f1_macro = f1_score(labels[split_test], predictions, average="macro")
 				print ("{:.02f}".format(label_percentage), f1_micro)
