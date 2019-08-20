@@ -61,6 +61,5 @@ module purge\; \
 module load bluebear\; \
 module load Python/3.6.3-iomkl-2018a\; \
 pip install --user numpy pandas networkx scikit-learn scikit-multilearn\; \
-)
 
 python evaluate_nc.py ${args}
