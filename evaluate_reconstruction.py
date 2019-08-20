@@ -203,7 +203,7 @@ def main():
 		header = None
 
 	embedding_df = pd.read_csv(args.embedding_filename,
-		sep=sep, header=header)
+		sep=sep, header=header, index_col=0)
 	embedding_df = embedding_df.reindex(sorted(embedding_df.index))	
 	# row 0 is embedding for node 0
 	# row 1 is embedding for node 1 etc...
