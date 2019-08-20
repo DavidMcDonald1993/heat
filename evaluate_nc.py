@@ -69,11 +69,6 @@ def evaluate_node_classification(embedding, labels,
 	if labels.shape[1] == 1:
 		print ("single label clasification")
 		labels = labels.flatten()
-		# from sklearn.preprocessing import OneHotEncoder
-		# labels_ = OneHotEncoder().fit_transform(labels).A
-
-		# from hyperbolic_feedforward import build_hyperbolic_logistic_regression_model
-		# from keras.callbacks import EarlyStopping
 
 		split = StratifiedShuffleSplit
 
@@ -81,13 +76,11 @@ def evaluate_node_classification(embedding, labels,
 		
 			for i, label_percentage in enumerate(label_percentages):
 
-				# model = build_hyperbolic_logistic_regression_model(klein_embedding.shape[1], 
-				# 	labels_.shape[1],
-				# 	euc_lr=1e-3, 
-				# 	hyp_lr=1e-2)
-
 				sss = split(n_splits=1, test_size=1-label_percentage, random_state=seed)
 				split_train, split_test = next(sss.split(embedding, labels.flatten()))
+				
+				print (split_train.shape, split_test.shape)
+				
 				model.fit(embedding[split_train], labels[split_train])
 				predictions = model.predict(embedding[split_test]).argmax(axis=-1)
 				f1_micro = f1_score(labels[split_test].flatten(), predictions, average="micro")
@@ -217,6 +210,8 @@ def main():
 	embedding_df = embedding_df.reindex(sorted(embedding_df.index))
 	embedding = embedding_df.values
 
+	print (embedding.shape)
+
 	# project to a space with straight euclidean lines
 	if dist_fn == "poincare":
 		embedding = poincare_ball_to_hyperboloid(embedding)
@@ -224,7 +219,7 @@ def main():
 	elif dist_fn == "hyperboloid":
 		embedding = hyperboloid_to_klein(embedding)
 
-	# assert (np.linalg.norm(klein_embedding, axis=-1) < 1) .all() 
+	print (embedding.shape)
 
 	label_percentages, f1_micros, f1_macros = \
 		evaluate_node_classification(embedding, node_labels)
