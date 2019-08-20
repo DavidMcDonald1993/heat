@@ -84,7 +84,7 @@ def evaluate_node_classification(embedding, labels,
 				model.fit(embedding[split_train], labels[split_train])
 				predictions = model.predict(embedding[split_test]).argmax(axis=-1)
 				print (predictions.shape)
-				f1_micro = f1_score(labels[split_test] predictions, average="micro")
+				f1_micro = f1_score(labels[split_test], predictions, average="micro")
 				f1_macro = f1_score(labels[split_test], predictions, average="macro")
 				print ("{:.02f}".format(label_percentage), f1_micro)
 
