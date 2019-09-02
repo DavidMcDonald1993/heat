@@ -164,7 +164,7 @@ class Graph():
 
 			# with Pool(processes=None) as p:
 				# alias_edges = p.map(self.get_alias_edge, edges)
-			alias_nodes = (self.get_alias_edge(edge) for edge in edges)
+			alias_edges = (self.get_alias_edge(edge) for edge in edges)
 			alias_edges = {edge: alias_edge for edge, alias_edge in alias_edges}
 
 			print ("preprocessed all edges")
