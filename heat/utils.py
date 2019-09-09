@@ -34,6 +34,7 @@ def load_data(args):
 
 	print ("removing all edges with zero weight")
 	zero_weight_edges = [(u, v) for u, v, w in graph.edges(data="weight") if w == 0.]
+	print ("found", len(zero_weight_edges), "edges with zero weight")
 	graph.remove_edges_from(zero_weight_edges)
 
 	print ("ensuring all weights are positive")
@@ -222,9 +223,9 @@ def determine_positive_and_negative_samples(graph, features, args):
 		positive_samples = list(graph.edges())
 		positive_samples += [(v, u) for (u, v) in positive_samples]
 		
-		for n in sorted(graph.nodes()):
-			negative_samples[n, list(graph.neighbors(n))] = 0
-
+		if not args.all_negs:
+			for n in sorted(graph.nodes()):
+				negative_samples[n, list(graph.neighbors(n))] = 0
 
 		if not args.no_walks:
 
@@ -248,8 +249,9 @@ def determine_positive_and_negative_samples(graph, features, args):
 						positive_samples.append((u, v))
 						positive_samples.append((v, u))
 
-						negative_samples[u, v] = 0
-						negative_samples[v, u] = 0
+						if not args.all_negs:
+							negative_samples[u, v] = 0
+							negative_samples[v, u] = 0
 
 				if num_walk % 1000 == 0:  
 					print ("processed walk {:04d}/{}".format(num_walk, len(walks)))
