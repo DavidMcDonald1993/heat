@@ -37,8 +37,10 @@ def hyperbolic_distance_poincare(X):
 def euclidean_distance(X):
 	return euclidean_distances(X)
 
-def evaluate_rank_and_MAP(dists, edgelist, non_edgelist):
+def evaluate_rank_and_AP(scores, 
+	edgelist, non_edgelist):
 	assert not isinstance(edgelist, dict)
+	assert (scores <= 0).all()
 
 	if not isinstance(edgelist, np.ndarray):
 		edgelist = np.array(edgelist)
@@ -46,16 +48,18 @@ def evaluate_rank_and_MAP(dists, edgelist, non_edgelist):
 	if not isinstance(non_edgelist, np.ndarray):
 		non_edgelist = np.array(non_edgelist)
 
-	edge_dists = dists[edgelist[:,0], edgelist[:,1]]
-	non_edge_dists = dists[non_edgelist[:,0], non_edgelist[:,1]]
+	edge_scores = scores[edgelist[:,0], edgelist[:,1]]
+	non_edge_scores = scores[non_edgelist[:,0], non_edgelist[:,1]]
 
-	labels = np.append(np.ones_like(edge_dists), np.zeros_like(non_edge_dists))
-	scores = -np.append(edge_dists, non_edge_dists)
-	ap_score = average_precision_score(labels, scores) # macro by default
-	auc_score = roc_auc_score(labels, scores)
-
-	idx = non_edge_dists.argsort()
-	ranks = np.searchsorted(non_edge_dists, edge_dists, sorter=idx) + 1
+	labels = np.append(np.ones_like(edge_scores), 
+		np.zeros_like(non_edge_scores))
+	scores_ = np.append(edge_scores, non_edge_scores)
+	ap_score = average_precision_score(labels, scores_) # macro by default
+	auc_score = roc_auc_score(labels, scores_)
+		
+	idx = (-non_edge_scores).argsort()
+	ranks = np.searchsorted(-non_edge_scores, 
+		-edge_scores, sorter=idx) + 1
 	ranks = ranks.mean()
 
 	print ("MEAN RANK =", ranks, "AP =", ap_score, 
@@ -181,9 +185,12 @@ def main():
 
 	test_results = dict()
 
+	scores = -dists
+
+
 	(mean_rank_lp, ap_lp, 
-	roc_lp) = evaluate_rank_and_MAP(dists, 
-	test_edges, test_non_edges)
+	roc_lp) = evaluate_rank_and_MAP(scores, 
+		test_edges, test_non_edges)
 
 	test_results.update({"mean_rank_lp": mean_rank_lp, 
 		"ap_lp": ap_lp,

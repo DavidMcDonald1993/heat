@@ -208,16 +208,12 @@ def main():
 	embedding_df = embedding_df.reindex(sorted(embedding_df.index))
 	embedding = embedding_df.values
 
-	print (embedding.shape)
-
 	# project to a space with straight euclidean lines
 	if dist_fn == "poincare":
 		embedding = poincare_ball_to_hyperboloid(embedding)
 		embedding = hyperboloid_to_klein(embedding)
 	elif dist_fn == "hyperboloid":
 		embedding = hyperboloid_to_klein(embedding)
-
-	print (embedding.shape)
 
 	label_percentages, f1_micros, f1_macros = \
 		evaluate_node_classification(embedding, node_labels)
