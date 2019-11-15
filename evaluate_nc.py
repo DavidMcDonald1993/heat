@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.linear_model import LogisticRegressionCV
-from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
+from sklearn.model_selection import StratifiedShuffleSplit, StratifiedKFold
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import f1_score
 
@@ -33,31 +33,46 @@ import argparse
 #         acc_list.append(tmp_a)
 #     return np.mean(acc_list)
 
-# def evaluate_kfold_multilabel_classification(klein_embedding, labels, model,
-# 	n_repeats=10):
-# 	assert len(labels.shape) == 2
-# 	sss = IterativeStratification(n_splits=n_repeats, 
-# 		random_state=0,
-# 		order=2)
-# 	f1_micros = []
-# 	f1_macros = []
-# 	hammings = []
-# 	i = 1
-# 	for split_train, split_test in sss.split(klein_embedding, labels):
-# 		model.fit(klein_embedding[split_train], labels[split_train])		
-# 		predictions = model.predict(klein_embedding[split_test])
-# 		f1_micro = f1_score(labels[split_test], predictions, average="micro")
-# 		f1_macro = f1_score(labels[split_test], predictions, average="macro")
-# 		f1_micros.append(f1_micro)
-# 		f1_macros.append(f1_macro)
-# 		print ("Done {}/{} folds".format(i, n_repeats))
-# 		hamming = hamming_score(labels[split_test], predictions)
-# 		hammings.append(hamming)
-# 		i += 1
-# 	return None, np.mean(f1_micros), np.mean(f1_macros), np.mean(hammings)
+def evaluate_kfold_label_classification(embedding, 
+	labels, 
+	k=10):
+	assert len(labels.shape) == 2
+	
+	model = LogisticRegressionCV(n_jobs=-1)
 
-def evaluate_node_classification(embedding, labels,
-	label_percentages=np.arange(0.02, 0.11, 0.01), n_repeats=10):
+	if labels.shape[1] == 1:
+		print ("single label clasification")
+		labels = labels.flatten()
+		sss = StratifiedKFold(n_splits=k, 
+			shuffle=True, 
+			random_state=0)
+
+	else:
+		print ("multi-label classification")
+		sss = IterativeStratification(n_splits=k, 
+			random_state=0,
+			order=2)
+		model = OneVsRestClassifier(model)
+			
+	f1_micros = []
+	f1_macros = []
+
+	i = 1
+	for split_train, split_test in sss.split(embedding, labels):
+		model.fit(embedding[split_train], labels[split_train])		
+		predictions = model.predict(embedding[split_test])
+		f1_micro = f1_score(labels[split_test], predictions, average="micro")
+		f1_macro = f1_score(labels[split_test], predictions, average="macro")
+		f1_micros.append(f1_micro)
+		f1_macros.append(f1_macro)
+		print ("Done {}/{} folds".format(i, k))
+		i += 1
+	return np.mean(f1_micros), np.mean(f1_macros)
+
+def evaluate_node_classification(embedding, 
+	labels,
+	label_percentages=np.arange(0.02, 0.11, 0.01), 
+	n_repeats=10):
 
 	print ("Evaluating node classification")
 
@@ -218,11 +233,16 @@ def main():
 	label_percentages, f1_micros, f1_macros = \
 		evaluate_node_classification(embedding, node_labels)
 
+	k_fold_f1_micro, k_fold_f1_macro = \
+		evaluate_kfold_label_classification(embedding, node_labels, k=10)
+
 	test_results = {}
 	for label_percentage, f1_micro, f1_macro in zip(label_percentages, f1_micros, f1_macros):
 		print ("{:.2f}".format(label_percentage), "micro = {:.2f}".format(f1_micro), "macro = {:.2f}".format(f1_macro) )
 		test_results.update({"{:.2f}_micro".format(label_percentage): f1_micro})
 		test_results.update({"{:.2f}_macro".format(label_percentage): f1_macro})
+
+	test_results.update({"10-fold-f1_micro": k_fold_f1_micro, "10-fold-f1-macro": k_fold_f1_macro})
 
 	test_results_dir = args.test_results_dir
 	if not os.path.exists(test_results_dir):

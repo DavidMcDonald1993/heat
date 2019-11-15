@@ -189,7 +189,7 @@ def main():
 
 
 	(mean_rank_lp, ap_lp, 
-	roc_lp) = evaluate_rank_and_MAP(scores, 
+	roc_lp) = evaluate_rank_and_AP(scores, 
 		test_edges, test_non_edges)
 
 	test_results.update({"mean_rank_lp": mean_rank_lp, 

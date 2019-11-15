@@ -57,7 +57,9 @@ def evaluate_precision_at_k(scores, edgelist, non_edgelist, k=10):
 
 	return np.mean(precisions)
 
-def evaluate_mean_average_precision(scores, edgelist, non_edgelist):
+def evaluate_mean_average_precision(scores, 
+	edgelist, 
+	non_edgelist):
 	edgelist_dict = {}
 	for u, v in edgelist:
 		if u not in edgelist_dict:
@@ -77,7 +79,8 @@ def evaluate_mean_average_precision(scores, edgelist, non_edgelist):
 	return np.mean(precisions)
 
 def evaluate_rank_and_AP(scores, 
-	edgelist, non_edgelist):
+	edgelist, 
+	non_edgelist):
 	assert not isinstance(edgelist, dict)
 	assert (scores <= 0).all()
 
@@ -105,6 +108,7 @@ def evaluate_rank_and_AP(scores,
 		"AUROC =", auc_score)
 
 	return ranks, ap_score, auc_score
+	
 def touch(path):
 	with open(path, 'a'):
 		os.utime(path, None)
@@ -230,7 +234,7 @@ def main():
 
 	(mean_rank_recon, ap_recon, 
 	roc_recon) = evaluate_rank_and_AP(scores, 
-	test_edges, test_non_edges)
+		test_edges, test_non_edges)
 
 	test_results.update({"mean_rank_recon": mean_rank_recon, 
 		"ap_recon": ap_recon,
@@ -241,10 +245,14 @@ def main():
 
 	test_results.update({"map_recon": map_reconstruction})
 
-	for k in (1, 3, 5, 10):
-		precision_at_k = evaluate_precision_at_k(scores, 
-		test_edges, test_non_edges, k=k)
-		test_results.update({"precision_{}".format(k): precision_at_k})
+	precisions_at_k = [(k, 
+		evaluate_precision_at_k(scores,  
+			test_edges, test_non_edges, k=k))
+			for k in (1, 3, 5, 10)]
+	for k, pk in precisions_at_k:
+		print ("precision at", k, pk)
+	test_results.update({"p@{}".format(k): pk
+		for k, pk in precisions_at_k})
 
 	test_results_dir = args.test_results_dir
 	if not os.path.exists(test_results_dir):
