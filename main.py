@@ -201,7 +201,8 @@ def build_model(num_nodes, args):
 
 def load_weights(model, args):
 
-	previous_models = sorted(glob.glob(os.path.join(args.embedding_path, "*.csv")))
+	previous_models = sorted(glob.iglob(
+		os.path.join(args.embedding_path, "*.csv.gz")))
 	if len(previous_models) > 0:
 		model_file = previous_models[-1]
 		initial_epoch = int(model_file.split("/")[-1].split("_")[0])
@@ -319,9 +320,6 @@ def configure_paths(args):
 		print ("making {}".format(args.embedding_path))
 	print ("saving embedding to {}".format(args.embedding_path))
 
-	# embedding filename
-	args.embedding_filename = os.path.join(args.embedding_path, "embedding.csv")
-	
 def main():
 
 	args = parse_args()

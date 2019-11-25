@@ -32,15 +32,17 @@ class Checkpointer(Callback):
 		self.save_model()
 
 	def remove_old_models(self):
-		for old_model_path in sorted(glob.glob(os.path.join(self.embedding_directory, "*.csv")))[:-self.history]:
+		for old_model_path in sorted(
+			glob.iglob(os.path.join(self.embedding_directory, "*.csv.gz")))[:-self.history]:
 			print ("removing model: {}".format(old_model_path))
 			os.remove(old_model_path)
 
 	def save_model(self):
-		filename = os.path.join(self.embedding_directory, "{:05d}_embedding.csv".format(self.epoch))
+		filename = os.path.join(self.embedding_directory, 
+			"{:05d}_embedding.csv.gz".format(self.epoch))
 		embedding = self.model.get_weights()[0]
 		# assert (np.allclose(minkowski_dot(embedding), -1))
 		print ("saving current embedding to {}".format(filename))
 
 		embedding_df = pd.DataFrame(embedding, index=self.nodes)
-		embedding_df.to_csv(filename)
+		embedding_df.to_csv(filename, compression="gzip")

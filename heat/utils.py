@@ -85,7 +85,7 @@ def load_data(args):
 	return graph, features, labels
 
 def load_embedding(embedding_filename):
-	assert embedding_filename.endswith(".csv")
+	assert embedding_filename.endswith(".csv.gz")
 	embedding_df = pd.read_csv(embedding_filename, index_col=0)
 	return embedding_df
 
