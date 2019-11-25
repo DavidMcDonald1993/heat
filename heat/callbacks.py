@@ -41,7 +41,6 @@ class Checkpointer(Callback):
 		filename = os.path.join(self.embedding_directory, 
 			"{:05d}_embedding.csv.gz".format(self.epoch))
 		embedding = self.model.get_weights()[0]
-		# assert (np.allclose(minkowski_dot(embedding), -1))
 		print ("saving current embedding to {}".format(filename))
 
 		embedding_df = pd.DataFrame(embedding, index=self.nodes)
