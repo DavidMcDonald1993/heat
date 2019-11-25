@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH --job-name=evaluateLP
-#SBATCH --output=evaluateLP_%A_%a.out
-#SBATCH --error=evaluateLP_%A_%a.err
+#SBATCH --job-name=evaluateLPNK
+#SBATCH --output=evaluateLPNK_%A_%a.out
+#SBATCH --error=evaluateLPNK_%A_%a.err
 #SBATCH --array=0-599
-#SBATCH --time=3-00:00:00
+#SBATCH --time=20:00
 #SBATCH --ntasks=1
-#SBATCH --mem=32G
+#SBATCH --mem=5G
 
 # heat=/rds/projects/2018/hesz01/heat/main.py
 # e=5

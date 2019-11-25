@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH --job-name=evaluateRECON
-#SBATCH --output=evaluateRECON_%A_%a.out
-#SBATCH --error=evaluateRECON_%A_%a.err
+#SBATCH --job-name=NKevaluateRECON
+#SBATCH --output=NKevaluateRECON_%A_%a.out
+#SBATCH --error=NKevaluateRECON_%A_%a.err
 #SBATCH --array=0-599
-#SBATCH --time=3-00:00:00
+#SBATCH --time=20:00
 #SBATCH --ntasks=1
-#SBATCH --mem=32G
+#SBATCH --mem=5G
 
 
 datasets=({cora_ml,citeseer,ppi,pubmed,mit})
@@ -20,7 +20,7 @@ num_seeds=${#seeds[@]}
 
 dataset_id=$((SLURM_ARRAY_TASK_ID / (num_seeds * num_dims) % num_datasets))
 dim_id=$((SLURM_ARRAY_TASK_ID / num_seeds % num_dims))
-seed_id=$((SLURM_ARRAY_TASK_ID  num_seeds ))
+seed_id=$((SLURM_ARRAY_TASK_ID % num_seeds ))
 
 dataset=${datasets[$dataset_id]}
 dim=${dims[$dim_id]}

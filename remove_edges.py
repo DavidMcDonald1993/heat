@@ -73,7 +73,7 @@ def main():
 	test_edgelist_fn = os.path.join(removed_edges_dir, "test_edges.tsv")
 	test_non_edgelist_fn = os.path.join(removed_edges_dir, "test_non_edges.tsv")
 	
-	graph, features, node_labels = load_data(args)
+	graph, _, _ = load_data(args)
 	print("loaded dataset")
 
 	edges = list(graph.edges())

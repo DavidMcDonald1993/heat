@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH --job-name=evaluateLP
-#SBATCH --output=evaluateLP_%A_%a.out
-#SBATCH --error=evaluateLP_%A_%a.err
+#SBATCH --job-name=EUCLIDLP
+#SBATCH --output=EUCLIDLP_%A_%a.out
+#SBATCH --error=EUCLIDLP_%A_%a.err
 #SBATCH --array=0-3599
 #SBATCH --time=3-00:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=32G
+#SBATCH --mem=10G
 
 datasets=({cora_ml,citeseer,ppi,pubmed,mit})
 dims=(5 10 25 50)
