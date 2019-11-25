@@ -46,7 +46,7 @@ labels=${data_dir}/labels.csv
 embedding_dir=embeddings/${dataset}/nc_experiment
 walks_dir=walks/${dataset}/nc_experiment
 
-embedding_f=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e})
+embedding_f=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv.gz" ${seed} ${dim} ${e})
 # echo $embedding_f
 
 if [ ! -f embedding_f ]
