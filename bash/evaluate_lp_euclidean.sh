@@ -38,7 +38,7 @@ embedding_dir=$(echo ../OpenANE/embeddings/${dataset}/${exp}/${dim}/${method}/${
 output=edgelists/${dataset}
 
 test_results=$(printf "test_results/${dataset}/${exp}/${method}/dim=%03d/" ${dim})
-embedding_f=$(printf "${embedding_dir}/embedding.csv" ${dim} ${seed})
+embedding_f=$(printf "${embedding_dir}/embedding.csv.gz" ${dim} ${seed})
 echo $embedding_f
 
 args=$(echo --output ${output} --dist_fn euclidean \

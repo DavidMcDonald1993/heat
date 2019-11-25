@@ -48,7 +48,7 @@ embedding_dir=embeddings/${dataset}/${exp}
 # output=edgelists/${dataset}
 
 test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" ${dim})
-embedding_f=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv" ${seed} ${dim} ${e})
+embedding_f=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv.gz" ${seed} ${dim} ${e})
 echo $embedding_f
 
 args=$(echo --edgelist ${edgelist} --labels ${labels} \

@@ -38,7 +38,7 @@ embedding_dir=$(echo ../OpenANE/embeddings/${dataset}/nc_experiment/${dim}/${met
 # output=edgelists/${dataset}
 
 test_results=$(printf "test_results/${dataset}/${exp}/${method}/dim=%03d/" ${dim})
-embedding_f=$(printf "${embedding_dir}/embedding.csv" ${dim} ${seed})
+embedding_f=$(printf "${embedding_dir}/embedding.csv.gz" ${dim} ${seed})
 echo $embedding_f
 
 args=$(echo --edgelist ${edgelist} --labels ${labels} \

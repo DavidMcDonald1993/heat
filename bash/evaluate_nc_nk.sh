@@ -34,7 +34,7 @@ embedding_dir=../poincare-embeddings/embeddings/${dataset}
 # output=edgelists/${dataset}
 
 test_results=$(printf "test_results/${dataset}/${exp}/nk/dim=%03d/" ${dim})
-embedding_f=$(printf "${embedding_dir}/dim=%02d/seed=%03d/${exp}/embedding.csv" ${dim} ${seed})
+embedding_f=$(printf "${embedding_dir}/dim=%02d/seed=%03d/${exp}/embedding.csv.gz" ${dim} ${seed})
 echo $embedding_f
 
 args=$(echo --edgelist ${edgelist} --labels ${labels} \
