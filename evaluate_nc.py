@@ -9,7 +9,8 @@ from sklearn.metrics import f1_score
 
 from skmultilearn.model_selection import IterativeStratification
 
-from heat.utils import load_data, hyperboloid_to_klein, load_embedding, poincare_ball_to_hyperboloid, hyperboloid_to_poincare_ball
+from heat.utils import load_data, hyperboloid_to_klein, poincare_ball_to_hyperboloid, hyperboloid_to_poincare_ball
+from evaluation_utils import touch, threadsafe_save_test_results, load_embedding
 
 import functools
 import fcntl
@@ -126,57 +127,57 @@ def evaluate_node_classification(embedding,
 
 	return label_percentages, f1_micros.mean(axis=0), f1_macros.mean(axis=0)
 
-def touch(path):
-	with open(path, 'a'):
-		os.utime(path, None)
+# def touch(path):
+# 	with open(path, 'a'):
+# 		os.utime(path, None)
 
-def read_edgelist(fn):
-	edges = []
-	with open(fn, "r") as f:
-		for line in (l.rstrip() for l in f.readlines()):
-			edge = tuple(int(i) for i in line.split("\t"))
-			edges.append(edge)
-	return edges
+# def read_edgelist(fn):
+# 	edges = []
+# 	with open(fn, "r") as f:
+# 		for line in (l.rstrip() for l in f.readlines()):
+# 			edge = tuple(int(i) for i in line.split("\t"))
+# 			edges.append(edge)
+# 	return edges
 
-def lock_method(lock_filename):
-	''' Use an OS lock such that a method can only be called once at a time. '''
+# def lock_method(lock_filename):
+# 	''' Use an OS lock such that a method can only be called once at a time. '''
 
-	def decorator(func):
+# 	def decorator(func):
 
-		@functools.wraps(func)
-		def lock_and_run_method(*args, **kwargs):
+# 		@functools.wraps(func)
+# 		def lock_and_run_method(*args, **kwargs):
 
-			# Hold program if it is already running 
-			# Snippet based on
-			# http://linux.byexamples.com/archives/494/how-can-i-avoid-running-a-python-script-multiple-times-implement-file-locking/
-			fp = open(lock_filename, 'r+')
-			done = False
-			while not done:
-				try:
-					fcntl.lockf(fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
-					done = True
-				except IOError:
-					pass
-			return func(*args, **kwargs)
+# 			# Hold program if it is already running 
+# 			# Snippet based on
+# 			# http://linux.byexamples.com/archives/494/how-can-i-avoid-running-a-python-script-multiple-times-implement-file-locking/
+# 			fp = open(lock_filename, 'r+')
+# 			done = False
+# 			while not done:
+# 				try:
+# 					fcntl.lockf(fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
+# 					done = True
+# 				except IOError:
+# 					pass
+# 			return func(*args, **kwargs)
 
-		return lock_and_run_method
+# 		return lock_and_run_method
 
-	return decorator 
+# 	return decorator 
 
-def threadsafe_fn(lock_filename, fn, *args, **kwargs ):
-	lock_method(lock_filename)(fn)(*args, **kwargs)
+# def threadsafe_fn(lock_filename, fn, *args, **kwargs ):
+# 	lock_method(lock_filename)(fn)(*args, **kwargs)
 
-def save_test_results(filename, seed, data, ):
-	d = pd.DataFrame(index=[seed], data=data)
-	if os.path.exists(filename):
-		test_df = pd.read_csv(filename, sep=",", index_col=0)
-		test_df = d.combine_first(test_df)
-	else:
-		test_df = d
-	test_df.to_csv(filename, sep=",")
+# def save_test_results(filename, seed, data, ):
+# 	d = pd.DataFrame(index=[seed], data=data)
+# 	if os.path.exists(filename):
+# 		test_df = pd.read_csv(filename, sep=",", index_col=0)
+# 		test_df = d.combine_first(test_df)
+# 	else:
+# 		test_df = d
+# 	test_df.to_csv(filename, sep=",")
 
-def threadsafe_save_test_results(lock_filename, filename, seed, data):
-	threadsafe_fn(lock_filename, save_test_results, filename=filename, seed=seed, data=data)
+# def threadsafe_save_test_results(lock_filename, filename, seed, data):
+# 	threadsafe_fn(lock_filename, save_test_results, filename=filename, seed=seed, data=data)
 
 def parse_args():
 
@@ -210,25 +211,27 @@ def main():
 
 	_, _, node_labels = load_data(args)
 	print ("Loaded dataset")
-	dist_fn = args.dist_fn
+	# dist_fn = args.dist_fn
 
-	sep = ","
-	header = "infer"
-	if dist_fn == "euclidean":
-		sep = " "
-		header = None
+	# sep = ","
+	# header = "infer"
+	# if dist_fn == "euclidean":
+	# 	sep = " "
+	# 	header = None
 
-	embedding_df = pd.read_csv(args.embedding_filename,
-		sep=sep, header=header, index_col=0)
-	embedding_df = embedding_df.reindex(sorted(embedding_df.index))
-	embedding = embedding_df.values
+	# embedding_df = pd.read_csv(args.embedding_filename,
+	# 	sep=sep, header=header, index_col=0)
+	# embedding_df = embedding_df.reindex(sorted(embedding_df.index))
+	# embedding = embedding_df.values
 
-	# project to a space with straight euclidean lines
-	if dist_fn == "poincare":
-		embedding = poincare_ball_to_hyperboloid(embedding)
-		embedding = hyperboloid_to_klein(embedding)
-	elif dist_fn == "hyperboloid":
-		embedding = hyperboloid_to_klein(embedding)
+	# # project to a space with straight euclidean lines
+	# if dist_fn == "poincare":
+	# 	embedding = poincare_ball_to_hyperboloid(embedding)
+	# 	embedding = hyperboloid_to_klein(embedding)
+	# elif dist_fn == "hyperboloid":
+	# 	embedding = hyperboloid_to_klein(embedding)
+
+	embedding = load_embedding(args.dist_fn, args.embedding_directory)
 
 	label_percentages, f1_micros, f1_macros = \
 		evaluate_node_classification(embedding, node_labels)
