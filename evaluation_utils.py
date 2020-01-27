@@ -15,9 +15,9 @@ def minkowski_dot(x, y):
 	assert len(x.shape) == len(y.shape) 
 	return np.sum(x[...,:-1] * y[...,:-1], axis=-1, keepdims=True) - x[...,-1:] * y[...,-1:]
 
-def hyperbolic_distance_hyperboloid(u):
-	u = np.expand_dims(u, axis=1)
-	v = np.expand_dims(u, axis=0)
+def hyperbolic_distance_hyperboloid(x):
+	u = np.expand_dims(x, axis=1)
+	v = np.expand_dims(x, axis=0)
 	mink_dp = -minkowski_dot(u, v)
 	mink_dp = np.maximum(mink_dp - 1, 1e-15)
 	return np.squeeze(np.arccosh(1 + mink_dp), axis=-1)
