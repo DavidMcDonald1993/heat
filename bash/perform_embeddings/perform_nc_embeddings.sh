@@ -8,8 +8,6 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=16G
 
-heat=/rds/projects/2018/hesz01/heat/main.py
-
 e=5
 
 datasets=(cora_ml citeseer ppi pubmed mit)
@@ -36,18 +34,18 @@ if [ $alpha -eq 100 ];
 then
 	alpha=1.00
 else
-	alpha=0.$alpha
+	alpha=0.${alpha}
 fi
 
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv
 features=${data_dir}/feats.csv
 labels=${data_dir}/labels.csv
-embedding_dir=embeddings/${dataset}/nc_experiment
-walks_dir=walks/${dataset}/nc_experiment
+dir=$(printf "${dataset}/nc_experiment/alpha=${alpha}/seed=%03d" ${seed})
+embedding_dir=$(printf "embeddings/${dir}/dim=%03d" ${dim} )
+walks_dir=walks/${dir}
 
-embedding_f=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv.gz" ${seed} ${dim} ${e})
-# echo $embedding_f
+embedding_f=$(printf "${embedding_dir}/%05d_embedding.csv.gz" ${e})
 
 if [ ! -f embedding_f ]
 then 
@@ -62,5 +60,5 @@ then
 
 	# echo $args
 
-	python ${heat} ${args}
+	python main.py ${args}
 fi

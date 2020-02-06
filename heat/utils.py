@@ -301,11 +301,11 @@ def determine_positive_and_negative_samples(graph, features, args):
 	positive_samples, probs = determine_positive_samples_and_probs(graph, features, args)
 
 	if not args.use_generator:
-		print("training without generator -- selecting negative samples before training")
+		print("Training without generator -- selecting negative samples before training")
 		positive_samples, negative_samples = select_negative_samples(positive_samples, probs, args.num_negative_samples)
 		probs = None
 	else:
-		print ("training with generator -- skipping selecting negative samples")
+		print ("Training with generator -- skipping selecting negative samples")
 		negative_samples = None 
 
 	return positive_samples, negative_samples, probs# negative_samples, alias_dict

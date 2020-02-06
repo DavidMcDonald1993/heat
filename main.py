@@ -236,8 +236,8 @@ def parse_args():
 
 	parser.add_argument("-e", "--num_epochs", dest="num_epochs", type=int, default=5,
 		help="The number of epochs to train for (default is 5).")
-	parser.add_argument("-b", "--batch_size", dest="batch_size", type=int, default=50, 
-		help="Batch size for training (default is 50).")
+	parser.add_argument("-b", "--batch_size", dest="batch_size", type=int, default=512, 
+		help="Batch size for training (default is 512).")
 	parser.add_argument("--nneg", dest="num_negative_samples", type=int, default=10, 
 		help="Number of negative samples for training (default is 10).")
 	parser.add_argument("--context-size", dest="context_size", type=int, default=3,
@@ -295,24 +295,25 @@ def configure_paths(args):
 	build directories on local system for output of model after each epoch
 	'''
 
-	if args.no_walks:
-		directory = os.path.join("no_walks",
-			"seed={:03d}".format(args.seed))
-	else:
-		directory = os.path.join("alpha={:.02f}".format(args.alpha),
-			"seed={:03d}".format(args.seed))
+	# if args.no_walks:
+	# 	directory = os.path.join("no_walks",
+	# 		"seed={:03d}".format(args.seed))
+	# else:
+	# 	directory = os.path.join("alpha={:.02f}".format(args.alpha),
+	# 		"seed={:03d}".format(args.seed))
 	
-	args.embedding_path = os.path.join(args.embedding_path, directory, "dim={:03d}".format(args.embedding_dim) )
+	# args.embedding_path = os.path.join(args.embedding_path, directory, "dim={:03d}".format(args.embedding_dim) )
 
 	# assert os.path.exists(args.walk_path)
 	if not args.no_walks:
-		args.walk_path = os.path.join(args.walk_path, directory)
+		# args.walk_path = os.path.join(args.walk_path, directory)
 		if not os.path.exists(args.walk_path):
 			os.makedirs(args.walk_path)
 			print ("making {}".format(args.walk_path))
 		print ("saving walks to {}".format(args.walk_path))
 		# walk filename 
-		args.walk_filename = os.path.join(args.walk_path, "num_walks={}-walk_len={}-p={}-q={}.walk".format(args.num_walks, 
+		args.walk_filename = os.path.join(args.walk_path, 
+		"num_walks={}-walk_len={}-p={}-q={}.walk".format(args.num_walks, 
 					args.walk_length, args.p, args.q))
 
 	if not os.path.exists(args.embedding_path):

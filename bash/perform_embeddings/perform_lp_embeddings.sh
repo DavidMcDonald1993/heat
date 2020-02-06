@@ -8,8 +8,6 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=16G
 
-heat=/rds/projects/2018/hesz01/heat/main.py
-
 e=5
 
 datasets=(cora_ml citeseer ppi pubmed mit)
@@ -42,13 +40,16 @@ fi
 data_dir=datasets/${dataset}
 features=${data_dir}/feats.csv
 labels=${data_dir}/labels.csv
-embedding_dir=embeddings/${dataset}/lp_experiment
-walks_dir=walks/${dataset}/lp_experiment
+
+
 training_dir=$(printf "edgelists/${dataset}/seed=%03d/training_edges" ${seed})
 edgelist=${training_dir}/edgelist.tsv
 
-embedding_f=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv.gz" ${seed} ${dim} ${e})
+dir=$(printf "${dataset}/lp_experiment/alpha=${alpha}/seed=%03d" ${seed})
+embedding_dir=$(printf "embeddings/${dir}/dim=%03d" ${dim} )
+walks_dir=walks/${dir}
 
+embedding_f=$(printf "${embedding_dir}/%05d_embedding.csv.gz" ${e})
 if [ ! -f $embedding_f ]
 then
 	module purge
@@ -60,5 +61,5 @@ then
 	--embedding ${embedding_dir} --walks ${walks_dir} --seed ${seed} --dim ${dim} \
 	--alpha ${alpha} -e ${e})
 
-	python ${heat} ${args}
+	python main.py ${args}
 fi
