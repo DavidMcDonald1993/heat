@@ -57,18 +57,12 @@ def main():
 
 	random.seed(args.seed)
 	
-	test_edges = np.array(list(graph.edges()))
+	test_edges = list(graph.edges())
 	num_edges = len(test_edges)
 
-	# test_non_edges = np.array(list(nx.non_edges(graph)))
 	test_non_edges = sample_non_edges(graph, 
 		set(test_edges),
 		num_edges)
-	num_non_edges = len(test_non_edges)
-
-	# np.random.seed(args.seed)
-	# idx = np.random.permutation(num_non_edges, )[:num_edges]
-	# test_non_edges = test_non_edges[idx]
 
 	embedding = load_embedding(args.dist_fn, 
 		args.embedding_directory)
