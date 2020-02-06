@@ -35,11 +35,11 @@ embedding_dir=../poincare-embeddings/embeddings/${dataset}
 # output=edgelists/${dataset}
 
 test_results=$(printf "test_results/${dataset}/${exp}/nk/dim=%03d/" ${dim})
-embedding_f=$(printf "${embedding_dir}/dim=%02d/seed=%03d/nc_experiment/embedding.csv.gz" ${dim} ${seed})
-echo $embedding_f
+embedding_dir=$(printf "${embedding_dir}/dim=%02d/seed=%03d/nc_experiment" ${dim} ${seed})
+echo $embedding_dir
 
 args=$(echo --edgelist ${edgelist} --dist_fn poincare \
-    --embedding ${embedding_f} --seed ${seed} \
+    --embedding ${embedding_dir} --seed ${seed} \
     --test-results-dir ${test_results})
 echo $args
 

@@ -34,16 +34,13 @@ edgelist=${data_dir}/edgelist.tsv
 features=${data_dir}/feats.csv
 labels=${data_dir}/labels.csv
 embedding_dir=$(echo ../OpenANE/embeddings/${dataset}/nc_experiment/${dim}/${method}/${seed})
-# walks_dir=walks/${dataset}/lp_experiment
-# output=edgelists/${dataset}
 
 test_results=$(printf "test_results/${dataset}/${exp}/${method}/dim=%03d/" ${dim})
-embedding_f=$(printf "${embedding_dir}/embedding.csv.gz" ${dim} ${seed})
-echo $embedding_f
+echo $embedding_dir
 
 args=$(echo --edgelist ${edgelist} --labels ${labels} \
     --dist_fn euclidean \
-    --embedding ${embedding_f} --seed ${seed} \
+    --embedding ${embedding_dir} --seed ${seed} \
     --test-results-dir ${test_results})
 echo $args
 

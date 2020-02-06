@@ -37,8 +37,8 @@ else
 	alpha=0.$alpha
 fi
 
-# data_dir=datasets/${dataset}
-# edgelist=${data_dir}/edgelist.tsv
+data_dir=datasets/${dataset}
+edgelist=${data_dir}/edgelist.tsv
 # features=${data_dir}/feats.csv
 # labels=${data_dir}/labels.csv
 embedding_dir=embeddings/${dataset}/${exp}
@@ -48,7 +48,8 @@ test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" 
 embedding_dir=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/" ${seed} ${dim})
 echo $embedding_dir
 
-args=$(echo --output ${output} --dist_fn hyperboloid \
+args=$(echo --edgelist ${edgelist} --output ${output} \
+    --dist_fn hyperboloid \
     --embedding ${embedding_dir} --seed ${seed} \
     --test-results-dir ${test_results})
 echo $args

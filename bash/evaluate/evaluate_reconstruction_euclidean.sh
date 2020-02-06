@@ -36,11 +36,10 @@ labels=${data_dir}/labels.csv
 embedding_dir=$(echo ../OpenANE/embeddings/${dataset}/nc_experiment/${dim}/${method}/${seed})
 
 test_results=$(printf "test_results/${dataset}/${exp}/${method}/dim=%03d/" ${dim})
-embedding_f=${embedding_dir}/embedding.csv.gz
-echo $embedding_f
+echo $embedding_dir
 
 args=$(echo --edgelist ${edgelist} --dist_fn euclidean \
-    --embedding ${embedding_f} --seed ${seed} \
+    --embedding ${embedding_dir} --seed ${seed} \
     --test-results-dir ${test_results})
 echo $args
 

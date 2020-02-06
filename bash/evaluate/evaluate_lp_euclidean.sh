@@ -29,20 +29,19 @@ dim=${dims[$dim_id]}
 seed=${seeds[$seed_id]}
 method=${methods[$method_id]}
 
-# data_dir=datasets/${dataset}
-# edgelist=${data_dir}/edgelist.tsv
+data_dir=datasets/${dataset}
+edgelist=${data_dir}/edgelist.tsv
 # features=${data_dir}/feats.csv
 # labels=${data_dir}/labels.csv
 embedding_dir=$(echo ../OpenANE/embeddings/${dataset}/${exp}/${dim}/${method}/${seed})
-# walks_dir=walks/${dataset}/lp_experiment
 output=edgelists/${dataset}
 
 test_results=$(printf "test_results/${dataset}/${exp}/${method}/dim=%03d/" ${dim})
-embedding_f=$(printf "${embedding_dir}/embedding.csv.gz" ${dim} ${seed})
-echo $embedding_f
+echo $embedding_dir
 
-args=$(echo --output ${output} --dist_fn euclidean \
-    --embedding ${embedding_f} --seed ${seed} \
+args=$(echo --edgelist ${edgelist} --output ${output} \
+    --dist_fn euclidean \
+    --embedding ${embedding_dir} --seed ${seed} \
     --test-results-dir ${test_results})
 echo $args
 
