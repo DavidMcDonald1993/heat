@@ -8,12 +8,13 @@ hyperbolic_feedforward.py
 test.sh
 write*.py
 heat/*.pyc
+*.pyc
 edgelists/
 embeddings/
 test_results/
 walks/
-__pycache__/
-heat/__pycache__/
+__pycache__
+heat/__pycache__
 no_walks_reconstruction.sh
 perform_embeddings_for_experiments.sh
 evaluate_script.sh

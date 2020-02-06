@@ -22,12 +22,7 @@ class TrainingDataGenerator(Sequence):
 		self.num_negative_samples = args.num_negative_samples
 		self.model = model
 
-		# embedding = self.model.get_weights()[-1]
-		# dists = hyperbolic_distance(embedding, embedding)
-		# probs = np.exp(-dists) * self.probs_
-		# probs /= probs.sum(axis=-1, keepdims=True)
-		# self.probs = probs.cumsum(-1)
-
+		
 	def get_training_sample(self, batch_positive_samples):
 		num_negative_samples = self.num_negative_samples
 		probs = self.probs
@@ -60,9 +55,3 @@ class TrainingDataGenerator(Sequence):
 		positive_samples = self.positive_samples
 		idx = np.random.permutation(len(positive_samples))
 		self.positive_samples = positive_samples[idx]
-
-		# embedding = self.model.get_weights()[-1]
-		# dists = hyperbolic_distance(embedding, embedding)
-		# probs = np.exp(-dists) * self.probs_
-		# probs /= probs.sum(axis=-1, keepdims=True)
-		# self.probs = probs.cumsum(-1)

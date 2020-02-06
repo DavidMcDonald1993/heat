@@ -12,7 +12,7 @@ heat=/rds/projects/2018/hesz01/heat/main.py
 
 e=5
 
-datasets=({cora_ml,citeseer,ppi,pubmed,mit})
+datasets=(cora_ml citeseer ppi pubmed mit)
 dims=(5 10 25 50)
 seeds=({0..29})
 alphas=(00 05 10 20 50 100)

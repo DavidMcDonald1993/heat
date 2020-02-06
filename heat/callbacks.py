@@ -18,12 +18,10 @@ class Checkpointer(Callback):
 		epoch,
 		nodes,
 		embedding_directory,
-		history=3
 		):
 		self.epoch = epoch
 		self.nodes = nodes
 		self.embedding_directory = embedding_directory
-		self.history = history
 
 	def on_epoch_end(self, batch, logs={}):
 		self.epoch += 1
@@ -32,10 +30,16 @@ class Checkpointer(Callback):
 		self.save_model()
 
 	def remove_old_models(self):
-		for old_model_path in sorted(
-			glob.iglob(os.path.join(self.embedding_directory, "*.csv.gz")))[:-self.history]:
+		embedding_directory = self.embedding_directory
+		# for old_model_path in sorted(
+		# 	glob.iglob(os.path.join(self.embedding_directory, 
+		# 		"[0-9]+_embedding.csv.gz"))):
+		for old_model_path in filter(
+			re.compile("[0-9]+_embedding.csv.gz").match, 
+			os.listdir(embedding_directory)):
 			print ("removing model: {}".format(old_model_path))
-			os.remove(old_model_path)
+			os.remove(os.path.join(embedding_directory, 
+				old_model_path))
 
 	def save_model(self):
 		filename = os.path.join(self.embedding_directory, 

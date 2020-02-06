@@ -9,7 +9,7 @@ def main():
     e = 5
     datasets = ["cora_ml", "citeseer", "ppi", "pubmed", "mit"]
     dims = (5, 10, 25, 50)
-    alphas = (0, .05, .1, .2, .5, .8, 1)
+    alphas = (0, .05, .1, .2, .5, 1)
     seeds = range(30)
     exps = ["nc_experiment", "lp_experiment"]
 

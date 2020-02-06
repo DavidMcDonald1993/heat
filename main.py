@@ -222,12 +222,12 @@ def parse_args():
 	'''
 	parser = argparse.ArgumentParser(description="HEAT algorithm for feature learning on complex networks")
 
-	parser.add_argument("--edgelist", dest="edgelist", type=str, default=None,#default="datasets/cora_ml/edgelist.tsv",
+	parser.add_argument("--edgelist", dest="edgelist", type=str, default=None,
 		help="edgelist to load.")
-	parser.add_argument("--features", dest="features", type=str, default=None,#default="datasets/cora_ml/feats.csv",
+	parser.add_argument("--features", dest="features", type=str, default=None,
 		help="features to load.")
-	parser.add_argument("--labels", dest="labels", type=str, default=None,#default="datasets/cora_ml/labels.csv",
-		help="path to labels")
+	parser.add_argument("--labels", dest="labels", type=str, default=None,
+		help="path to labels.")
 
 	parser.add_argument("--seed", dest="seed", type=int, default=0,
 		help="Random seed (default is 0).")
