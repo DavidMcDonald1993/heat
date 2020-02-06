@@ -244,20 +244,35 @@ def evaluate_precision_at_k(scores,
 
 def evaluate_mean_average_precision(scores, 
 	edgelist, 
+	graph_edges=None
 	):
+	N, _  = scores.shape
 	edgelist_dict = {}
 	for u, v in edgelist:
 		if u not in edgelist_dict:
 			edgelist_dict.update({u: []})
 		edgelist_dict[u].append(v)
+	if graph_edges:
+		graph_edgelist_dict = {}
+		for u, v in graph_edges:
+			if u not in graph_edgelist_dict:
+				graph_edgelist_dict.update({u: []})
+			if u in edgelist_dict and v not in edgelist_dict[u]:
+				graph_edgelist_dict[u].append(v)
 
 	precisions = []
 	for u in edgelist_dict:
 		scores_ = scores[u]
 		true_neighbours = edgelist_dict[u]
 		labels = np.array([n in true_neighbours 
-			for n in range(len(scores))])
-		mask = np.array([n!=u for n in range(len(scores))])
+			for n in range(N)])
+		mask = np.array([n!=u
+			for n in range(N)]) # ignore self loops
+		if graph_edges and u in graph_edgelist_dict:
+			mask *= np.array([n not in graph_edgelist_dict[u]
+				for n in range(N)]) # ignore training edges
+			assert mask.sum() > 0
+			assert labels[mask].sum() > 0
 		s = average_precision_score(labels[mask], scores_[mask])
 		precisions.append(s)
 

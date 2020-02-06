@@ -254,7 +254,7 @@ def parse_args():
 		help="node2vec in-out parameter (default is 1.).")
 	parser.add_argument('--num-walks', dest="num_walks", type=int, default=10, 
 		help="Number of walks per source (default is 10).")
-	parser.add_argument('--walk-length', dest="walk_length", type=int, default=15, 
+	parser.add_argument('--walk-length', dest="walk_length", type=int, default=80, 
 		help="Length of random walk from source (default is 80).")
 
 	parser.add_argument("--sigma", dest="sigma", type=np.float64, default=1.,
@@ -392,7 +392,8 @@ def main():
 	else:
 		print ("Training without data generator")
 
-		train_x = np.append(positive_samples, negative_samples, axis=-1)
+		train_x = np.append(positive_samples, 
+			negative_samples, axis=-1)
 		train_y = np.zeros([len(train_x), 1, 1], dtype=np.int32 )
 
 		model.fit(train_x, train_y,
