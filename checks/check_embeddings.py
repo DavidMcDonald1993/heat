@@ -20,7 +20,7 @@ def main():
             "embeddings", dataset, exp, 
             "alpha={:.02f}".format(alpha),
             "seed={:03d}".format(seed),
-            "dim={:02d}".format(dim), 
+            "dim={:03d}".format(dim), 
 
         )
 
