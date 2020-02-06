@@ -4,9 +4,9 @@
 #SBATCH --output=evaluateRECON_%A_%a.out
 #SBATCH --error=evaluateRECON_%A_%a.err
 #SBATCH --array=0-3599
-#SBATCH --time=3-00:00:00
+#SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=32G
+#SBATCH --mem=20G
 
 datasets=({cora_ml,citeseer,ppi,pubmed,mit})
 dims=(5 10 25 50)

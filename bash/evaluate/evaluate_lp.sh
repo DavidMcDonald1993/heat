@@ -4,9 +4,9 @@
 #SBATCH --output=evaluateLP_%A_%a.out
 #SBATCH --error=evaluateLP_%A_%a.err
 #SBATCH --array=0-3599
-#SBATCH --time=05:00
+#SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=5G
+#SBATCH --mem=20G
 
 # heat=/rds/projects/2018/hesz01/heat/main.py
 e=5
