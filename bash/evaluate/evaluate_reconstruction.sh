@@ -9,7 +9,6 @@
 #SBATCH --mem=20G
 
 # heat=/rds/projects/2018/hesz01/heat/main.py
-e=5
 
 datasets=({cora_ml,citeseer,ppi,pubmed,mit})
 dims=(5 10 25 50)
@@ -48,11 +47,11 @@ embedding_dir=embeddings/${dataset}/nc_experiment
 # output=edgelists/${dataset}
 
 test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" ${dim})
-embedding_f=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv.gz" ${seed} ${dim} ${e})
-echo $embedding_f
+embedding_dir=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/%05d_embedding.csv.gz" ${seed} ${dim} ${e})
+echo $embedding_dir
 
 args=$(echo --edgelist ${edgelist} --dist_fn hyperboloid \
-    --embedding ${embedding_f} --seed ${seed} \
+    --embedding ${embedding_dir} --seed ${seed} \
     --test-results-dir ${test_results})
 echo $args
 
