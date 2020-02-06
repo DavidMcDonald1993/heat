@@ -37,12 +37,6 @@ def parse_args():
 
 	return parser.parse_args()
 
-def elu(x, alpha=1.):
-	x = x.copy()
-	mask = x <= 0
-	x[mask] = alpha * (np.exp(x[mask]) - 1)
-	return x
-
 def main():
 
 	args = parse_args()
