@@ -130,7 +130,7 @@ def load_file(filename, header="infer", sep=","):
 
 def load_hyperboloid(embedding_directory):
 	files = sorted(glob.iglob(os.path.join(embedding_directory, 
-		"*_embedding.csv.gz")))
+		"*embedding.csv.gz")))
 	embedding_filename = files[-1]
 	embedding = load_file(embedding_filename)
 
@@ -138,7 +138,7 @@ def load_hyperboloid(embedding_directory):
 
 def load_poincare(embedding_directory):
 	files = sorted(glob.iglob(os.path.join(embedding_directory, 
-		"*_embedding.csv.gz")))
+		"*embedding.csv.gz")))
 	embedding_filename = files[-1]
 	embedding = load_file(embedding_filename)
 
@@ -146,7 +146,7 @@ def load_poincare(embedding_directory):
 
 def load_euclidean(embedding_directory):
 	files = sorted(glob.iglob(os.path.join(embedding_directory, 
-		"*_embedding.csv.gz")))
+		"*embedding.csv.gz")))
 	embedding_filename = files[-1]
 	embedding = load_file(embedding_filename, header=None, sep=" ")
 	return embedding
