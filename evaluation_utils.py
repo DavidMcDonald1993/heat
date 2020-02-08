@@ -13,13 +13,14 @@ import fcntl
 
 def minkowski_dot(x, y):
 	assert len(x.shape) == len(y.shape) 
-	return np.sum(x[...,:-1] * y[...,:-1], axis=-1, keepdims=True) - x[...,-1:] * y[...,-1:]
+	return np.sum(x[...,:-1] * y[...,:-1], 
+		axis=-1, keepdims=True) - x[...,-1:] * y[...,-1:]
 
-def hyperbolic_distance_hyperboloid(x):
-	u = np.expand_dims(x, axis=1)
-	v = np.expand_dims(x, axis=0)
+def hyperbolic_distance_hyperboloid(X):
+	u = np.expand_dims(X, axis=1)
+	v = np.expand_dims(X, axis=0)
 	mink_dp = -minkowski_dot(u, v)
-	mink_dp = np.maximum(mink_dp - 1, 1e-15)
+	mink_dp = np.maximum(mink_dp - 1, np.nextafter(0, 1))
 	return np.squeeze(np.arccosh(1 + mink_dp), axis=-1)
 
 def hyperbolic_distance_poincare(X):
@@ -121,6 +122,7 @@ def kullback_leibler_divergence_hyperboloid(mu_sigmas):
 	)
 
 def load_file(filename, header="infer", sep=","):
+	print ("reading from", filename)
 	df = pd.read_csv(filename, index_col=0, 
 		header=header, sep=sep)
 	idx = sorted(df.index)

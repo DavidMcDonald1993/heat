@@ -48,16 +48,14 @@ def main():
 
 	args = parse_args()
 
-	args.directed = True
-
 	graph, _, _ = load_data(args)
-	assert nx.is_directed(graph)
 	print ("Loaded dataset")
 	print ()
 
 	random.seed(args.seed)
 	
 	test_edges = list(graph.edges())
+	test_edges += [(v, u) for u, v in graph.edges()]
 	num_edges = len(test_edges)
 
 	test_non_edges = sample_non_edges(graph, 

@@ -41,10 +41,7 @@ def main():
 
 	args = parse_args()
 
-	args.directed = True
-
 	graph, _, _ = load_data(args)
-	assert nx.is_directed(graph)
 	print ("Loaded dataset")
 	print ()
 
@@ -66,7 +63,8 @@ def main():
 	print ("number of test edges:", len(test_edges))
 	print ("number of test non edges:", len(test_non_edges))
 
-	embedding = load_embedding(args.dist_fn, args.embedding_directory)
+	embedding = load_embedding(args.dist_fn,
+		args.embedding_directory)
 
 	scores = compute_scores(embedding, args.dist_fn)
 
