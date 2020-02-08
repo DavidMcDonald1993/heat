@@ -1,15 +1,12 @@
 #!/bin/bash
 
-#SBATCH --job-name=evaluateLPNK
-#SBATCH --output=evaluateLPNK_%A_%a.out
-#SBATCH --error=evaluateLPNK_%A_%a.err
+#SBATCH --job-name=NKLP
+#SBATCH --output=NKLP_%A_%a.out
+#SBATCH --error=NKLP_%A_%a.err
 #SBATCH --array=0-599
 #SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=20G
-
-# heat=/rds/projects/2018/hesz01/heat/main.py
-# e=5
 
 datasets=({cora_ml,citeseer,ppi,pubmed,mit})
 dims=(5 10 25 50)

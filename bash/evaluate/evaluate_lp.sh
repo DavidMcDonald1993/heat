@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=evaluateLP
-#SBATCH --output=evaluateLP_%A_%a.out
-#SBATCH --error=evaluateLP_%A_%a.err
+#SBATCH --job-name=HEATLP
+#SBATCH --output=HEATLP_%A_%a.out
+#SBATCH --error=HEATLP_%A_%a.err
 #SBATCH --array=0-3599
 #SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1

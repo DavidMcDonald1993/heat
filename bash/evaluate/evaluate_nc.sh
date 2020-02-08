@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=evaluateNC
-#SBATCH --output=evaluateNC_%A_%a.out
-#SBATCH --error=evaluateNC_%A_%a.err
+#SBATCH --job-name=HEATNC
+#SBATCH --output=HEATNC_%A_%a.out
+#SBATCH --error=HEATNC_%A_%a.err
 #SBATCH --array=0-3599
 #SBATCH --time=3-00:00:00
 #SBATCH --ntasks=1

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=NKevaluateRECON
-#SBATCH --output=NKevaluateRECON_%A_%a.out
-#SBATCH --error=NKevaluateRECON_%A_%a.err
+#SBATCH --job-name=NKRECON
+#SBATCH --output=NKRECON_%A_%a.out
+#SBATCH --error=NKRECON_%A_%a.err
 #SBATCH --array=0-599
 #SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1

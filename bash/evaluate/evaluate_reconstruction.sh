@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=evaluateRECON
-#SBATCH --output=evaluateRECON_%A_%a.out
-#SBATCH --error=evaluateRECON_%A_%a.err
+#SBATCH --job-name=HEATRECON
+#SBATCH --output=HEATRECON_%A_%a.out
+#SBATCH --error=HEATRECON_%A_%a.err
 #SBATCH --array=0-3599
 #SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1
