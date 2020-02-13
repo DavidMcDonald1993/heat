@@ -162,6 +162,22 @@ def main():
 
 	embedding = load_embedding(args.dist_fn, args.embedding_directory)
 
+	if args.dist_fn == "hyperboloid":
+		print ("loaded a hyperboloid embedding")
+		print ("projecting from hyperboloid to klein")
+		print (embedding.shape)
+		emebdding = hyperboloid_to_klein(embedding)
+		print (embedding.shape)
+
+	elif args.dist_fn == "poincare":
+		print ("loaded a poincare embedding")
+		print ("projecting from poincare to klein")
+		print (embedding.shape)
+		embedding = poincare_ball_to_hyperboloid(embedding)
+		embedding = hyperboloid_to_klein(embedding)
+		print (embedding.shape)
+
+
 	label_percentages, f1_micros, f1_macros = \
 		evaluate_node_classification(embedding, node_labels)
 
