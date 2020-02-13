@@ -166,7 +166,7 @@ def main():
 		print ("loaded a hyperboloid embedding")
 		print ("projecting from hyperboloid to klein")
 		print (embedding.shape)
-		emebdding = hyperboloid_to_klein(embedding)
+		embedding = hyperboloid_to_klein(embedding)
 		print (embedding.shape)
 
 	elif args.dist_fn == "poincare":
