@@ -16,6 +16,8 @@ import functools
 import fcntl
 import argparse
 
+from collections import Counter
+
 # def hamming_score(y_true, y_pred, normalize=True, sample_weight=None):
 #     '''
 #     Compute the Hamming score (a.k.a. label-based accuracy) for the multi-label case
@@ -174,6 +176,15 @@ def main():
 	print ("Loaded dataset")
 
 	embedding = load_embedding(args.dist_fn, args.embedding_directory)
+
+
+	if node_labels.shape[1] == 1: # remove any node belonging to an under-represented class
+		min_count = 10
+		label_counts = Counter(node_labels.flatten())
+		mask = np.array([label_counts[l] >= min_count
+			for l in node_labels.flatten()])
+		embedding = embedding[mask]
+		node_labels = node_labels[mask]
 
 	if args.dist_fn == "hyperboloid":
 		print ("loaded a hyperboloid embedding")
