@@ -17,7 +17,7 @@ def main():
         datasets, dims, alphas, exps
     ):
         embedding_directory = os.path.join(
-            "embeddings", dataset, exp, 
+            "test_results", dataset, exp, 
             "alpha={:.02f}".format(alpha),
             "dim={:03d}".format(dim), 
 
