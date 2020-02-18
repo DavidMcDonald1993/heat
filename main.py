@@ -180,7 +180,7 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		# z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
 		# exp_map = tf.cosh(norm_x) * p + tf.sinh(norm_x) * z
 		#####################################################
-		# exp_map = normalise_to_hyperboloid(exp_map) # account for floating point imprecision
+		exp_map = normalise_to_hyperboloid(exp_map) # account for floating point imprecision
 
 		return exp_map
 
