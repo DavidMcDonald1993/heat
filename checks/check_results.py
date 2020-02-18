@@ -10,25 +10,29 @@ def main():
     datasets = ["cora_ml", "citeseer", "ppi", "pubmed", "mit"]
     dims = (5, 10, 25, 50)
     alphas = (0, .05, .1, .2, .5, 1)
-    seeds = range(30)
-    exps = ["nc_experiment", "lp_experiment"]
+    exps = ["nc_experiment", "lp_experiment",
+     "reconstruction_experiment"]
 
-    for dataset, dim, alpha, seed, exp in itertools.product(
-        datasets, dims, alphas, seeds, exps
+    for dataset, dim, alpha, exp in itertools.product(
+        datasets, dims, alphas, exps
     ):
         embedding_directory = os.path.join(
             "embeddings", dataset, exp, 
             "alpha={:.02f}".format(alpha),
-            "seed={:03d}".format(seed),
             "dim={:03d}".format(dim), 
 
         )
 
         filename = os.path.join(embedding_directory, 
-            "{:05d}_embedding.csv.gz".format(e))
+            "test_results.csv")
 
         try:
-            pd.read_csv(filename, index_col=0)
+            results = pd.read_csv(filename, index_col=0)
+
+            if not results.shape[0] == 30:
+                print (filename, "has missing results")
+                print (set(range(30) - set(results.index))
+
         except EmptyDataError:
             print (filename, "is empty removing it")
             os.remove(filename)
