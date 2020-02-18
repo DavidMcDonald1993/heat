@@ -254,7 +254,8 @@ def determine_positive_and_negative_samples(graph, features, args):
 							negative_samples[v, u] = 0
 
 				if num_walk % 1000 == 0:  
-					print ("processed walk {:04d}/{}".format(num_walk, len(walks)))
+					print ("processed walk {:04d}/{}".format(
+						num_walk, len(walks)))
 
 
 		print ("DETERMINED POSITIVE AND NEGATIVE SAMPLES")
@@ -276,11 +277,13 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		print ("PREPROCESSED NEGATIVE SAMPLE PROBABILTIES")
 
-		print ("SORTING POSITIVE SAMPLES")
 		positive_samples = np.array(positive_samples)
-		idx = positive_samples[:,0].argsort()
-		positive_samples = positive_samples[idx]
-		print ("SORTED POSITIVE SAMPLES")
+
+		if not args.use_generator:
+			print ("SORTING POSITIVE SAMPLES")
+			idx = positive_samples[:,0].argsort()
+			positive_samples = positive_samples[idx]
+			print ("SORTED POSITIVE SAMPLES")
 
 		return positive_samples, probs
 
@@ -291,8 +294,10 @@ def determine_positive_and_negative_samples(graph, features, args):
 		# 	num_negative_samples=num_negative_samples), 
 		# 	((u, count, probs[u]) for u, count in Counter(positive_samples[:,0]).items()))
 		negative_samples = (choose_negative_samples(x, num_negative_samples) 
-			for x in ((u, count, probs[u]) for u, count in Counter(positive_samples[:,0]).items()))
-		negative_samples = np.concatenate([arr for _, arr in sorted(negative_samples, key=lambda x: x[0])], axis=0,)
+			for x in ((u, count, probs[u]) 
+			for u, count in sorted(Counter(positive_samples[:,0]).items(), key=lambda x: x[0])))
+		negative_samples = np.concatenate([arr for _, arr in 
+			sorted(negative_samples, key=lambda x: x[0])], axis=0,)
 
 		print ("selected negative samples")
 
@@ -366,6 +371,7 @@ def perform_walks(graph, features, args):
 	else:
 		print ("loading walks from {}".format(walk_file))
 		walks = load_walks_from_file(walk_file, )
+
 	return walks
 
 def lock_method(lock_filename):

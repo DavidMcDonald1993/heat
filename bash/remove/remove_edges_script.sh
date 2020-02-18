@@ -7,9 +7,8 @@
 #SBATCH --time=05:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=20G
-# SBATCH --mail-type ALL
 
-datasets=({cora_ml,citeseer,ppi,pubmed,mit})
+datasets=(cora_ml citeseer ppi pubmed mit)
 seeds=({0..29})
 
 num_datasets=${#datasets[@]}
@@ -34,5 +33,9 @@ then
 	module load bluebear
 	module load apps/python3/3.5.2
 
-	python remove_edges.py --edgelist=$edgelist --features=$features --labels=$labels --output=$output --seed $seed
+	args=$(echo --edgelist $edgelist \
+	--features $features --labels $labels \
+	--output $output --seed $seed)
+
+	python remove_edges.py $args
 fi

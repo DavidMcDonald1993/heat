@@ -16,25 +16,22 @@ class TrainingDataGenerator(Sequence):
 	def __init__(self, positive_samples, probs, model, args):
 		idx = np.random.permutation(len(positive_samples))
 		self.positive_samples = positive_samples[idx]
-		self.positive_samples = positive_samples
 		self.probs = probs
 		self.batch_size = args.batch_size
 		self.num_negative_samples = args.num_negative_samples
 		self.model = model
-
 		
 	def get_training_sample(self, batch_positive_samples):
 		num_negative_samples = self.num_negative_samples
 		probs = self.probs
-		
-		input_nodes = batch_positive_samples[:,0]
 
 		batch_negative_samples = np.array([
 			np.searchsorted(probs[u], np.random.rand(num_negative_samples))
-			for u in input_nodes
+			for u, v in batch_positive_samples
 		], dtype=np.int32)
 
-		batch_nodes = np.concatenate([batch_positive_samples, batch_negative_samples], axis=1)
+		batch_nodes = np.concatenate([batch_positive_samples, 
+			batch_negative_samples], axis=1)
 
 		return batch_nodes
 
@@ -47,7 +44,8 @@ class TrainingDataGenerator(Sequence):
 		batch_positive_samples = positive_samples[batch_idx * batch_size : (batch_idx + 1) * batch_size]
 		training_sample = self.get_training_sample(batch_positive_samples)
 		
-		target = np.zeros((training_sample.shape[0], 1, 1), dtype=np.int32)
+		target = np.zeros((training_sample.shape[0], 1, 1), 
+			dtype=np.int64)
 		
 		return training_sample, target
 

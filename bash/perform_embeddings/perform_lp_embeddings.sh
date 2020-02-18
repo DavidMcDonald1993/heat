@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH --job-name=embeddingsLP
-#SBATCH --output=embeddingsLP_%A_%a.out
-#SBATCH --error=embeddingsLP_%A_%a.err
+#SBATCH --job-name=HEATLP
+#SBATCH --output=HEATLP_%A_%a.out
+#SBATCH --error=HEATLP_%A_%a.err
 #SBATCH --array=0-3599
-#SBATCH --time=3-00:00:00
+#SBATCH --time=10-00:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=16G
+#SBATCH --mem=20G
 
 e=5
 
@@ -62,4 +62,8 @@ then
 	--alpha ${alpha} -e ${e})
 
 	python main.py ${args}
+
+else 
+	echo $embedding_f already exists
+
 fi

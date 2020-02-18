@@ -1,29 +1,18 @@
 from __future__ import print_function
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-import h5py
-import multiprocessing 
-import re
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import argparse
-import json
-import sys
 import random
 import numpy as np
 import networkx as nx
 import pandas as pd
 import glob
-import gc
 
-from scipy.sparse import identity
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
-
-from keras.layers import Input, Layer, Dense, Embedding
+from keras.layers import Input, Layer
 from keras.models import Model
 from keras import backend as K
-from keras.callbacks import Callback, TerminateOnNaN, TensorBoard, ModelCheckpoint, CSVLogger, EarlyStopping
+from keras.callbacks import Callback, TerminateOnNaN, EarlyStopping
 
 import tensorflow as tf
 from tensorflow.python.framework import ops
@@ -31,8 +20,8 @@ from tensorflow.python.ops import math_ops, control_flow_ops
 from tensorflow.python.training import optimizer
 
 from heat.utils import hyperboloid_to_poincare_ball, load_data, load_embedding
-from heat.utils import perform_walks, determine_positive_and_negative_samples
-from heat.losses import  hyperbolic_softmax_loss, hyperbolic_sigmoid_loss, hyperbolic_hypersphere_loss
+from heat.utils import determine_positive_and_negative_samples
+from heat.losses import  hyperbolic_softmax_loss
 from heat.generators import TrainingDataGenerator
 from heat.visualise import draw_graph, plot_degree_dist
 from heat.callbacks import Checkpointer
@@ -49,7 +38,7 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
  
 # Only allow a total of half the GPU memory to be allocated
-config.gpu_options.per_process_gpu_memory_fraction = 0.5
+# config.gpu_options.per_process_gpu_memory_fraction = 0.5
 
 config.log_device_placement=False
 config.allow_soft_placement=True
@@ -67,7 +56,8 @@ def euclidean_dot(x, y):
 
 def minkowski_dot(x, y):
 	axes = len(x.shape) - 1, len(y.shape) -1
-	return K.batch_dot(x[...,:-1], y[...,:-1], axes=axes) - K.batch_dot(x[...,-1:], y[...,-1:], axes=axes)
+	return K.batch_dot(x[...,:-1], y[...,:-1], axes=axes) - \
+		K.batch_dot(x[...,-1:], y[...,-1:], axes=axes)
 
 def hyperboloid_initializer(shape, r_max=1e-3):
 
@@ -78,15 +68,8 @@ def hyperboloid_initializer(shape, r_max=1e-3):
 			x = K.concatenate([x, t], axis=-1)
 		return 1 / (1. - K.sum(K.square(X), axis=-1, keepdims=True)) * x
 
-	def sphere_uniform_sample(shape, r_max):
-		num_samples, dim = shape
-		X = tf.random_normal(shape=shape, dtype=K.floatx())
-		X_norm = K.sqrt(K.sum(K.square(X), axis=-1, keepdims=True))
-		U = tf.random_uniform(shape=(num_samples, 1), dtype=K.floatx())
-		return r_max * U ** (1./dim) * X / X_norm
-
-	w = sphere_uniform_sample(shape, r_max=r_max)
-	# w = tf.random_uniform(shape=shape, minval=-r_max, maxval=r_max, dtype=K.floatx())
+	w = tf.random_uniform(shape=shape, minval=-r_max, 
+		maxval=r_max, dtype=K.floatx())
 	return poincare_ball_to_hyperboloid(w)
 
 class HyperboloidEmbeddingLayer(Layer):
@@ -110,16 +93,18 @@ class HyperboloidEmbeddingLayer(Layer):
 	def call(self, idx):
 
 		embedding = tf.gather(self.embedding, idx)
-		# embedding = tf.nn.embedding_lookup(self.embedding, idx)
 
 		return embedding
 
 	def compute_output_shape(self, input_shape):
-		return (input_shape[0], input_shape[1], self.embedding_dim + 1)
+		return (input_shape[0], input_shape[1], 
+			self.embedding_dim + 1)
 	
 	def get_config(self):
-		base_config = super(HyperboloidEmbeddingLayer, self).get_config()
-		base_config.update({"num_nodes": self.num_nodes, "embedding_dim": self.embedding_dim})
+		base_config = super(HyperboloidEmbeddingLayer, self).\
+			get_config()
+		base_config.update({"num_nodes": self.num_nodes, 
+			"embedding_dim": self.embedding_dim})
 		return base_config
 
 class ExponentialMappingOptimizer(optimizer.Optimizer):
@@ -128,17 +113,21 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		lr=0.1, 
 		use_locking=False,
 		name="ExponentialMappingOptimizer"):
-		super(ExponentialMappingOptimizer, self).__init__(use_locking, name)
+		super(ExponentialMappingOptimizer, self).\
+			__init__(use_locking, name)
 		self.lr = lr
 
 	def _apply_dense(self, grad, var):
 		spacial_grad = grad[:,:-1]
-		t_grad = -1 * grad[:,-1:]
+		t_grad = -grad[:,-1:]
 		
-		ambient_grad = tf.concat([spacial_grad, t_grad], axis=-1)
-		tangent_grad = self.project_onto_tangent_space(var, ambient_grad)
+		ambient_grad = tf.concat([spacial_grad, t_grad], 
+			axis=-1)
+		tangent_grad = self.project_onto_tangent_space(var, 
+			ambient_grad)
 		
-		exp_map = self.exponential_mapping(var, - self.lr * tangent_grad)
+		exp_map = self.exponential_mapping(var, 
+			- self.lr * tangent_grad)
 		
 		return tf.assign(var, exp_map)
 		
@@ -147,27 +136,34 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		values = grad.values
 
 		p = tf.gather(var, indices, name="gather_apply_sparse")
-		# p = tf.nn.embedding_lookup(var, indices)
 
 		spacial_grad = values[:, :-1]
 		t_grad = -values[:, -1:]
 
-		ambient_grad = tf.concat([spacial_grad, t_grad], axis=-1, name="optimizer_concat")
+		ambient_grad = tf.concat([spacial_grad, t_grad], 
+			axis=-1, name="optimizer_concat")
 
-		tangent_grad = self.project_onto_tangent_space(p, ambient_grad)
-		exp_map = self.exponential_mapping(p, - self.lr * tangent_grad)
+		tangent_grad = self.project_onto_tangent_space(p, 
+			ambient_grad)
+		exp_map = self.exponential_mapping(p, 
+			- self.lr * tangent_grad)
 
-		return tf.scatter_update(ref=var, indices=indices, updates=exp_map, name="scatter_update")
+		return tf.scatter_update(ref=var, 
+			indices=indices, updates=exp_map, 
+			name="scatter_update")
 	
 	def project_onto_tangent_space(self, hyperboloid_point, minkowski_ambient):
-		return minkowski_ambient + minkowski_dot(hyperboloid_point, minkowski_ambient) * hyperboloid_point
+		return minkowski_ambient + \
+			minkowski_dot(hyperboloid_point, minkowski_ambient) * \
+				hyperboloid_point
    
 	def exponential_mapping( self, p, x ):
 
 		def normalise_to_hyperboloid(x):
 			return x / K.sqrt( -minkowski_dot(x, x) )
 
-		norm_x = K.sqrt( K.maximum(np.float64(0.), minkowski_dot(x, x) ) ) 
+		norm_x = K.sqrt( K.maximum(np.float64(0.), 
+			minkowski_dot(x, x) ) ) 
 		####################################################
 		exp_map_p = tf.cosh(norm_x) * p
 		
@@ -184,7 +180,7 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 		# z = x / K.maximum(norm_x, K.epsilon()) # unit norm 
 		# exp_map = tf.cosh(norm_x) * p + tf.sinh(norm_x) * z
 		#####################################################
-		exp_map = normalise_to_hyperboloid(exp_map) # account for floating point imprecision
+		# exp_map = normalise_to_hyperboloid(exp_map) # account for floating point imprecision
 
 		return exp_map
 
@@ -193,7 +189,8 @@ def build_model(num_nodes, args):
 	x = Input(shape=(1 + 1 + args.num_negative_samples, ), 
 		name="model_input", 
 		dtype=tf.int32)
-	y = HyperboloidEmbeddingLayer(num_nodes, args.embedding_dim, name="embedding_layer")(x)
+	y = HyperboloidEmbeddingLayer(num_nodes, 
+		args.embedding_dim, name="embedding_layer")(x)
 	model = Model(x, y)
 
 	return model
@@ -294,19 +291,7 @@ def configure_paths(args):
 	'''
 	build directories on local system for output of model after each epoch
 	'''
-
-	# if args.no_walks:
-	# 	directory = os.path.join("no_walks",
-	# 		"seed={:03d}".format(args.seed))
-	# else:
-	# 	directory = os.path.join("alpha={:.02f}".format(args.alpha),
-	# 		"seed={:03d}".format(args.seed))
-	
-	# args.embedding_path = os.path.join(args.embedding_path, directory, "dim={:03d}".format(args.embedding_dim) )
-
-	# assert os.path.exists(args.walk_path)
 	if not args.no_walks:
-		# args.walk_path = os.path.join(args.walk_path, directory)
 		if not os.path.exists(args.walk_path):
 			os.makedirs(args.walk_path)
 			print ("making {}".format(args.walk_path))
@@ -353,7 +338,7 @@ def main():
 	loss = hyperbolic_softmax_loss(sigma=args.sigma)
 	model.compile(optimizer=optimizer, 
 		loss=loss, 
-		target_tensors=[tf.placeholder(dtype=tf.int32)])
+		target_tensors=[tf.placeholder(dtype=tf.int64)])
 	model.summary()
 
 	callbacks = [
@@ -374,12 +359,14 @@ def main():
 
 	if args.use_generator:
 		print ("Training with data generator with {} worker threads".format(args.workers))
-		training_generator = TrainingDataGenerator(positive_samples,  
-				probs,
-				model,
-				args)
+		training_generator = TrainingDataGenerator(
+			positive_samples,  
+			probs,
+			model,
+			args)
 
-		model.fit_generator(training_generator, 
+		model.fit_generator(
+			training_generator, 
 			workers=args.workers,
 			max_queue_size=10, 
 			use_multiprocessing=args.workers>0, 
@@ -395,7 +382,7 @@ def main():
 
 		train_x = np.append(positive_samples, 
 			negative_samples, axis=-1)
-		train_y = np.zeros([len(train_x), 1, 1], dtype=np.int32 )
+		train_y = np.zeros([len(train_x), 1, 1], dtype=np.int64 )
 
 		model.fit(train_x, train_y,
 			shuffle=True,
