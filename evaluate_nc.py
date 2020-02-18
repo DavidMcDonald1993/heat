@@ -10,7 +10,7 @@ from sklearn.metrics import f1_score
 from skmultilearn.model_selection import IterativeStratification
 
 from heat.utils import load_data, hyperboloid_to_klein, poincare_ball_to_hyperboloid, hyperboloid_to_poincare_ball
-from evaluation_utils import touch, threadsafe_save_test_results, load_embedding
+from evaluation_utils import check_complete, touch, threadsafe_save_test_results, load_embedding
 
 import functools
 import fcntl
@@ -157,6 +157,19 @@ def main():
 
 	args = parse_args()
 
+	test_results_dir = args.test_results_dir
+	if not os.path.exists(test_results_dir):
+		os.makedirs(test_results_dir, exist_ok=True)
+	test_results_filename = os.path.join(test_results_dir, 
+		"test_results.csv")
+
+	if check_complete(test_results_filename, args.seed):
+		return
+
+	test_results_lock_filename = os.path.join(test_results_dir, 
+		"test_results.lock")
+	touch(test_results_lock_filename)
+
 	_, _, node_labels = load_data(args)
 	print ("Loaded dataset")
 
@@ -192,13 +205,13 @@ def main():
 
 	test_results.update({"10-fold-f1_micro": k_fold_f1_micro, "10-fold-f1-macro": k_fold_f1_macro})
 
-	test_results_dir = args.test_results_dir
-	if not os.path.exists(test_results_dir):
-		os.makedirs(test_results_dir)
-	test_results_filename = os.path.join(test_results_dir, "test_results.csv")
-	test_results_lock_filename = os.path.join(test_results_dir, "test_results.lock")
+	# test_results_dir = args.test_results_dir
+	# if not os.path.exists(test_results_dir):
+	# 	os.makedirs(test_results_dir)
+	# test_results_filename = os.path.join(test_results_dir, "test_results.csv")
+	# test_results_lock_filename = os.path.join(test_results_dir, "test_results.lock")
 
-	touch (test_results_lock_filename)
+	# touch (test_results_lock_filename)
 
 	print ("saving test results to {}".format(test_results_filename))
 	threadsafe_save_test_results(test_results_lock_filename, test_results_filename, args.seed, data=test_results )
