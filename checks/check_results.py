@@ -31,7 +31,7 @@ def main():
 
             if not results.shape[0] == 30:
                 print (filename, "has missing results")
-                print (set(range(30) - set(results.index)))
+                print (set(range(30)) - set(results.index))
 
         except EmptyDataError:
             print (filename, "is empty removing it")
