@@ -41,6 +41,22 @@ def main():
 
 	args = parse_args()
 
+	test_results_dir = args.test_results_dir
+	if not os.path.exists(test_results_dir):
+		os.makedirs(test_results_dir, exist_ok=True)
+	test_results_filename = os.path.join(test_results_dir, 
+		"test_results.csv")
+
+	if os.path.exist(test_results_filename):
+		existing_results = pd.read_csv(test_results_filename, index_col=0)
+		if args.seed in existing_results.index:
+			print (args.seed, "already done --terminating")
+			return
+
+	test_results_lock_filename = os.path.join(test_results_dir, 
+		"test_results.lock")
+	touch(test_results_lock_filename)
+
 	graph, _, _ = load_data(args)
 	print ("Loaded dataset")
 	print ()
@@ -88,14 +104,7 @@ def main():
 
 	test_results.update({"map_lp": map_lp})
 
-	test_results_dir = args.test_results_dir
-	if not os.path.exists(test_results_dir):
-		os.makedirs(test_results_dir, exist_ok=True)
-	test_results_filename = os.path.join(test_results_dir, 
-		"test_results.csv")
-	test_results_lock_filename = os.path.join(test_results_dir, 
-		"test_results.lock")
-	touch(test_results_lock_filename)
+
 
 	print ("saving test results to {}".format(test_results_filename))
 

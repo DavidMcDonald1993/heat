@@ -29,6 +29,9 @@ dim=${dims[$dim_id]}
 seed=${seeds[$seed_id]}
 method=${methods[$method_id]}
 
+echo $dataset $dim $seed $method
+
+
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv
 features=${data_dir}/feats.csv

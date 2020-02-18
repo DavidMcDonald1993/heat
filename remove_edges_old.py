@@ -38,13 +38,13 @@ def parse_args():
 	'''
 	parser = argparse.ArgumentParser(description="Script to remove edges for link prediction experiments")
 
-	parser.add_argument("--edgelist", dest="edgelist", type=str, default="datasets/cora_ml/edgelist.tsv",
+	parser.add_argument("--edgelist", dest="edgelist", type=str, 
 		help="edgelist to load.")
-	parser.add_argument("--features", dest="features", type=str, default="datasets/cora_ml/feats.csv",
+	parser.add_argument("--features", dest="features", type=str, 
 		help="features to load.")
-	parser.add_argument("--labels", dest="labels", type=str, default="datasets/cora_ml/labels.csv",
+	parser.add_argument("--labels", dest="labels", type=str, 
 		help="path to labels")
-	parser.add_argument("--output", dest="output", type=str, default="edgelists/cora_ml",
+	parser.add_argument("--output", dest="output", type=str,
 		help="path to save training and removed edges")
 
 	parser.add_argument('--directed', action="store_true", help='flag to train on directed graph')

@@ -15,6 +15,8 @@ seeds=({0..29})
 alphas=(00 05 10 20 50 100)
 exp=lp_experiment
 
+
+
 num_datasets=${#datasets[@]}
 num_dims=${#dims[@]}
 num_seeds=${#seeds[@]}
@@ -36,6 +38,9 @@ then
 else
 	alpha=0.$alpha
 fi
+
+echo $dataset $dim $seed $alpha
+
 
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv

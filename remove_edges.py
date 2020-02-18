@@ -7,7 +7,7 @@ import networkx as nx
 
 import argparse
 
-from hednet.utils import load_data
+from heat.utils import load_data
 from remove_utils import sample_non_edges, write_edgelist_to_file
 
 def split_edges(graph, 

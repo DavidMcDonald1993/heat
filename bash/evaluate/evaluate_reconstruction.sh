@@ -36,6 +36,9 @@ else
 	alpha=0.$alpha
 fi
 
+echo $dataset $dim $seed $alpha
+
+
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv
 # features=${data_dir}/feats.csv

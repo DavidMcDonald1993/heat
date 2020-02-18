@@ -268,14 +268,16 @@ def evaluate_mean_average_precision(scores,
 		true_neighbours = edgelist_dict[u]
 		labels = np.array([n in true_neighbours 
 			for n in range(N)])
-		mask = np.array([n!=u
+		mask = np.array([n != u or n in true_neighbours
 			for n in range(N)]) # ignore self loops
 		if graph_edges and u in graph_edgelist_dict:
 			mask *= np.array([n not in graph_edgelist_dict[u]
 				for n in range(N)]) # ignore training edges
 			assert mask.sum() > 0
-			assert labels[mask].sum() > 0
-		s = average_precision_score(labels[mask], scores_[mask])
+			assert labels[mask].sum() > 0, \
+				(u, edgelist_dict[u], graph_edgelist_dict[u])
+		s = average_precision_score(labels[mask], 
+			scores_[mask])
 		precisions.append(s)
 
 	return np.mean(precisions)

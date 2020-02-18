@@ -13,6 +13,7 @@ dims=(5 10 25 50)
 seeds=({0..29})
 exp=lp_experiment
 
+
 num_datasets=${#datasets[@]}
 num_dims=${#dims[@]}
 num_seeds=${#seeds[@]}
@@ -24,6 +25,9 @@ seed_id=$((SLURM_ARRAY_TASK_ID % num_seeds ))
 dataset=${datasets[$dataset_id]}
 dim=${dims[$dim_id]}
 seed=${seeds[$seed_id]}
+
+echo $dataset $dim $seed 
+
 
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv
