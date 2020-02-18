@@ -365,6 +365,14 @@ def save_test_results(filename, seed, data, ):
 def threadsafe_save_test_results(lock_filename, filename, seed, data):
 	threadsafe_fn(lock_filename, save_test_results, filename=filename, seed=seed, data=data)
 
+def check_complete(test_results_filename, seed):
+	if os.path.exists(test_results_filename):
+		existing_results = pd.read_csv(test_results_filename, index_col=0)
+		if seed in existing_results.index:
+			print (seed, "already done --terminating")
+			return True 
+	return False
+
 
 
 	
