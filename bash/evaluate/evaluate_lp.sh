@@ -9,7 +9,7 @@
 #SBATCH --mem=20G
 
 
-datasets=({cora_ml,citeseer,ppi,pubmed,mit})
+datasets=(cora_ml citeseer ppi pubmed mit)
 dims=(5 10 25 50)
 seeds=({0..29})
 alphas=(00 05 10 20 50 100)

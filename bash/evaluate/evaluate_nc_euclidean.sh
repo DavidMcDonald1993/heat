@@ -8,7 +8,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=32G
 
-datasets=({cora_ml,citeseer,ppi,pubmed,mit})
+datasets=(cora_ml citeseer ppi pubmed mit)
 dims=(5 10 25 50)
 seeds=({0..29})
 methods=(abrw attrpure deepwalk tadw aane sagegcn)
