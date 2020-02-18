@@ -369,7 +369,7 @@ def check_complete(test_results_filename, seed):
 	if os.path.exists(test_results_filename):
 		existing_results = pd.read_csv(test_results_filename, index_col=0)
 		if seed in existing_results.index:
-			print (test_results_filename, ": seed=", seed, "already done --terminating")
+			print (test_results_filename, ": seed=", seed, "complete --terminating")
 			return True 
 	return False
 
