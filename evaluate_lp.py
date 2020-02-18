@@ -47,7 +47,7 @@ def main():
 	test_results_filename = os.path.join(test_results_dir, 
 		"test_results.csv")
 
-	if os.path.exist(test_results_filename):
+	if os.path.exists(test_results_filename):
 		existing_results = pd.read_csv(test_results_filename, index_col=0)
 		if args.seed in existing_results.index:
 			print (args.seed, "already done --terminating")
