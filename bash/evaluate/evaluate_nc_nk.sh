@@ -29,9 +29,9 @@ echo $dataset $dim $seed
 
 
 data_dir=datasets/${dataset}
-edgelist=${data_dir}/edgelist.tsv
-features=${data_dir}/feats.csv
-labels=${data_dir}/labels.csv
+edgelist=${data_dir}/edgelist.tsv.gz 
+features=${data_dir}/feats.csv.gz 
+labels=${data_dir}/labels.csv.gz 
 embedding_dir=../poincare-embeddings/embeddings/${dataset}
 
 test_results=$(printf "test_results/${dataset}/${exp}/nk/dim=%03d/" ${dim})

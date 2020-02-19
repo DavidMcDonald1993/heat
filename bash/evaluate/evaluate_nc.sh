@@ -40,9 +40,9 @@ echo $dataset $dim $seed $alpha
 
 
 data_dir=datasets/${dataset}
-edgelist=${data_dir}/edgelist.tsv
-features=${data_dir}/feats.csv
-labels=${data_dir}/labels.csv
+edgelist=${data_dir}/edgelist.tsv.gz 
+features=${data_dir}/feats.csv.gz 
+labels=${data_dir}/labels.csv.gz 
 embedding_dir=embeddings/${dataset}/${exp}
 
 test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" ${dim})

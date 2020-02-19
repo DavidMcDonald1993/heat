@@ -50,7 +50,7 @@ def load_data(args):
 
 		print ("loading features from {}".format(features_filename))
 
-		if features_filename.endswith(".csv"):
+		if features_filename.endswith(".csv") or features_filename.endswith(".csv.gz"):
 			features = pd.read_csv(features_filename, index_col=0, sep=",")
 			features = features.reindex(sorted(graph.nodes())).values
 			features = StandardScaler().fit_transform(features) # input features are standard scaled
@@ -66,7 +66,7 @@ def load_data(args):
 
 		print ("loading labels from {}".format(labels_filename))
 
-		if labels_filename.endswith(".csv"):
+		if labels_filename.endswith(".csv") or labels_filename.endswith(".csv.gz"):
 			labels = pd.read_csv(labels_filename, index_col=0, sep=",")
 			labels = labels.reindex(sorted(graph.nodes())).values.astype(int)#.flatten()
 			assert len(labels.shape) == 2
@@ -218,10 +218,11 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		N = len(graph)
 		negative_samples = np.ones((N, N), dtype=bool)
-		# np.fill_diagonal(negative_samples, 0)
+		np.fill_diagonal(negative_samples, 0)
 
 		positive_samples = list(graph.edges())
-		positive_samples += [(v, u) for (u, v) in positive_samples]
+		positive_samples += [(v, u) 
+			for (u, v) in positive_samples]
 		
 		if not args.all_negs:
 			for n in sorted(graph.nodes()):
@@ -259,7 +260,8 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 
 		print ("DETERMINED POSITIVE AND NEGATIVE SAMPLES")
-		print ("found {} positive sample pairs".format(len(positive_samples)))
+		print ("found {} positive sample pairs".format(
+			len(positive_samples)))
 
 		counts = np.zeros(N)
 
@@ -274,6 +276,8 @@ def determine_positive_and_negative_samples(graph, features, args):
 		assert (probs > 0).any(axis=-1).all(), "a node in the network does not have any negative samples"
 		probs /= probs.sum(axis=-1, keepdims=True)
 		probs = probs.cumsum(axis=-1)
+
+		assert np.allclose(probs[:,-1], 1)
 
 		print ("PREPROCESSED NEGATIVE SAMPLE PROBABILTIES")
 
@@ -307,10 +311,11 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 	if not args.use_generator:
 		print("Training without generator -- selecting negative samples before training")
-		positive_samples, negative_samples = select_negative_samples(positive_samples, probs, args.num_negative_samples)
+		positive_samples, negative_samples = select_negative_samples(
+			positive_samples, probs, args.num_negative_samples)
 		probs = None
 	else:
-		print ("Training with generator -- skipping selecting negative samples")
+		print ("Training with data generator -- skipping selection of negative samples")
 		negative_samples = None 
 
 	return positive_samples, negative_samples, probs# negative_samples, alias_dict

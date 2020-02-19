@@ -43,9 +43,7 @@ echo $dataset $dim $seed $alpha
 
 
 data_dir=datasets/${dataset}
-edgelist=${data_dir}/edgelist.tsv
-# features=${data_dir}/feats.csv
-# labels=${data_dir}/labels.csv
+edgelist=${data_dir}/edgelist.tsv.gz
 embedding_dir=embeddings/${dataset}/${exp}
 output=edgelists/${dataset}
 

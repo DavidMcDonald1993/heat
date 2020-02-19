@@ -145,6 +145,7 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 
 		tangent_grad = self.project_onto_tangent_space(p, 
 			ambient_grad)
+		
 		exp_map = self.exponential_mapping(p, 
 			- self.lr * tangent_grad)
 
@@ -160,7 +161,7 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 	def exponential_mapping( self, p, x ):
 
 		def normalise_to_hyperboloid(x):
-			return x / K.sqrt( -minkowski_dot(x, x) )
+			return x / K.sqrt( K.abs(minkowski_dot(x, x)) )
 
 		norm_x = K.sqrt( K.maximum(np.float64(0.), 
 			minkowski_dot(x, x) ) ) 
@@ -173,7 +174,8 @@ class ExponentialMappingOptimizer(optimizer.Optimizer):
 
 		updates = tf.sinh(non_zero_norm) * z
 		dense_shape = tf.cast( tf.shape(p), tf.int64)
-		exp_map_x = tf.scatter_nd(indices=idx[:,None], updates=updates, shape=dense_shape)
+		exp_map_x = tf.scatter_nd(indices=idx[:,None], 
+			updates=updates, shape=dense_shape)
 		
 		exp_map = exp_map_p + exp_map_x 
 		#####################################################
@@ -326,7 +328,6 @@ def main():
 		plot_degree_dist(graph, "degree distribution")
 
 	configure_paths(args)
-
 	print ("Configured paths")
 
 	# build model
@@ -352,8 +353,8 @@ def main():
 	]			
 
 	positive_samples, negative_samples, probs = \
-			determine_positive_and_negative_samples(graph, 
-			features, args)
+		determine_positive_and_negative_samples(graph, 
+		features, args)
 
 	del features # remove features reference to free up memory
 
@@ -363,12 +364,13 @@ def main():
 			positive_samples,  
 			probs,
 			model,
+			graph,
 			args)
 
 		model.fit_generator(
 			training_generator, 
 			workers=args.workers,
-			max_queue_size=10, 
+			max_queue_size=50, 
 			use_multiprocessing=args.workers>0, 
 			epochs=args.num_epochs, 
 			steps_per_epoch=len(training_generator),

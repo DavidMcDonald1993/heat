@@ -38,9 +38,8 @@ else
 fi
 
 data_dir=datasets/${dataset}
-features=${data_dir}/feats.csv
-labels=${data_dir}/labels.csv
-
+features=${data_dir}/feats.csv.gz 
+labels=${data_dir}/labels.csv.gz 
 
 training_dir=$(printf "edgelists/${dataset}/seed=%03d/training_edges" ${seed})
 edgelist=${training_dir}/edgelist.tsv

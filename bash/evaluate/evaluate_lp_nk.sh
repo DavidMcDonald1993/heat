@@ -30,9 +30,7 @@ echo $dataset $dim $seed
 
 
 data_dir=datasets/${dataset}
-edgelist=${data_dir}/edgelist.tsv
-# features=${data_dir}/feats.csv
-# labels=${data_dir}/labels.csv
+edgelist=${data_dir}/edgelist.tsv.gz
 embedding_dir=../poincare-embeddings/embeddings/${dataset}
 output=edgelists/${dataset}
 

@@ -33,9 +33,7 @@ echo $dataset $dim $seed $method
 
 
 data_dir=datasets/${dataset}
-edgelist=${data_dir}/edgelist.tsv
-features=${data_dir}/feats.csv
-labels=${data_dir}/labels.csv
+edgelist=${data_dir}/edgelist.tsv.gz 
 embedding_dir=$(echo ../OpenANE/embeddings/${dataset}/nc_experiment/${dim}/${method}/${seed})
 
 test_results=$(printf "test_results/${dataset}/${exp}/${method}/dim=%03d/" ${dim})

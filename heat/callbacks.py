@@ -20,16 +20,19 @@ class Checkpointer(Callback):
 		epoch,
 		nodes,
 		embedding_directory,
+		frequency=1,
 		):
 		self.epoch = epoch
 		self.nodes = nodes
 		self.embedding_directory = embedding_directory
+		self.frequency = frequency
 
 	def on_epoch_end(self, batch, logs={}):
 		self.epoch += 1
 		print ("Epoch {} complete".format(self.epoch)) 
-		self.remove_old_models()
-		self.save_model()
+		if self.epoch % self.frequency == 0:
+			self.remove_old_models()
+			self.save_model()
 
 	def remove_old_models(self):
 		embedding_directory = self.embedding_directory
@@ -50,6 +53,8 @@ class Checkpointer(Callback):
 		embedding_df.to_csv(filename, compression="gzip")
 
 		embedding_poincare = hyperboloid_to_poincare_ball(embedding)
+
+		print (np.linalg.norm(embedding_poincare.mean(0)))
 
 		norms = np.linalg.norm(embedding_poincare, axis=-1)
 		print ("min", norms.min(), "mean", norms.mean(), 

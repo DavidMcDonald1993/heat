@@ -30,12 +30,8 @@ echo $dataset $dim $seed
 
 
 data_dir=datasets/${dataset}
-edgelist=${data_dir}/edgelist.tsv
-# features=${data_dir}/feats.csv
-# labels=${data_dir}/labels.csv
+edgelist=${data_dir}/edgelist.tsv.gz
 embedding_dir=../poincare-embeddings/embeddings/${dataset}
-# walks_dir=walks/${dataset}/lp_experiment
-# output=edgelists/${dataset}
 
 test_results=$(printf "test_results/${dataset}/${exp}/nk/dim=%03d/" ${dim})
 embedding_dir=$(printf "${embedding_dir}/dim=%02d/seed=%03d/nc_experiment" ${dim} ${seed})
