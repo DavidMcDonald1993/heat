@@ -1,7 +1,7 @@
 # HEAT: Hyperbolic Embedding of Attributed Networks
 Reference implementation of algorithm described in https://arxiv.org/abs/1903.03036
 
-Authors: David MCDOANLD dxm237@cs.bham.ac.uk
+Authors: David MCDONALD dxm237@cs.bham.ac.uk
 
 ## Requirements:
 Python3
