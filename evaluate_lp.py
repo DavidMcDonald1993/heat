@@ -59,8 +59,6 @@ def main():
 		"test_results.lock")
 	touch(test_results_lock_filename)
 
-	args.directed = True
-
 	graph, _, _ = load_data(args)
 	assert not nx.is_directed(graph)
 	print ("Loaded dataset")
