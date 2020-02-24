@@ -6,7 +6,7 @@
 #SBATCH --array=0-3599
 #SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=20G
+#SBATCH --mem=5G
 
 datasets=(cora_ml citeseer ppi pubmed mit)
 dims=(5 10 25 50)
@@ -18,6 +18,7 @@ num_datasets=${#datasets[@]}
 num_dims=${#dims[@]}
 num_seeds=${#seeds[@]}
 num_methods=${#methods[@]}
+
 
 dataset_id=$((SLURM_ARRAY_TASK_ID / (num_methods * num_seeds * num_dims) % num_datasets))
 dim_id=$((SLURM_ARRAY_TASK_ID / (num_methods * num_seeds) % num_dims))
@@ -31,15 +32,16 @@ method=${methods[$method_id]}
 
 echo $dataset $dim $seed $method
 
+
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz
 embedding_dir=$(echo ../OpenANE/embeddings/${dataset}/${exp}/${dim}/${method}/${seed})
-output=edgelists/${dataset}
+removed_edges_dir=$(printf edgelists/${dataset}/seed=%03d/removed_edges ${seed})
 
 test_results=$(printf "test_results/${dataset}/${exp}/${method}/dim=%03d/" ${dim})
 echo $embedding_dir
 
-args=$(echo --edgelist ${edgelist} --output ${output} \
+args=$(echo --edgelist ${edgelist} --removed_edges_dir ${removed_edges_dir} \
     --dist_fn euclidean \
     --embedding ${embedding_dir} --seed ${seed} \
     --test-results-dir ${test_results})

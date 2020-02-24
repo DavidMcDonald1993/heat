@@ -6,7 +6,7 @@
 #SBATCH --array=0-599
 #SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=20G
+#SBATCH --mem=5G
 
 
 datasets=(cora_ml citeseer ppi pubmed mit)

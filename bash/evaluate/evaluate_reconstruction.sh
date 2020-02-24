@@ -6,7 +6,7 @@
 #SBATCH --array=0-3599
 #SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=20G
+#SBATCH --mem=5G
 
 datasets=(cora_ml citeseer ppi pubmed mit)
 dims=(5 10 25 50)
@@ -31,13 +31,12 @@ alpha=${alphas[$alpha_id]}
 
 if [ $alpha -eq 100 ];
 then
-	alpha=1.00
+    alpha=1.00
 else
-	alpha=0.$alpha
+    alpha=0.$alpha
 fi
 
 echo $dataset $dim $seed $alpha
-
 
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz

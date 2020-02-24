@@ -6,7 +6,7 @@
 #SBATCH --array=0-3599
 #SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=20G
+#SBATCH --mem=5G
 
 
 datasets=(cora_ml citeseer ppi pubmed mit)
@@ -45,13 +45,13 @@ echo $dataset $dim $seed $alpha
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz
 embedding_dir=embeddings/${dataset}/${exp}
-output=edgelists/${dataset}
+removed_edges_dir=$(printf edgelists/${dataset}/seed=%03d/removed_edges ${seed})
 
 test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" ${dim})
 embedding_dir=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/" ${seed} ${dim})
 echo $embedding_dir
 
-args=$(echo --edgelist ${edgelist} --output ${output} \
+args=$(echo --edgelist ${edgelist} --removed_edges_dir ${removed_edges_dir} \
     --dist_fn hyperboloid \
     --embedding ${embedding_dir} --seed ${seed} \
     --test-results-dir ${test_results})

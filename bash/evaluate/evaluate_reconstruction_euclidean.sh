@@ -6,7 +6,7 @@
 #SBATCH --array=0-3599
 #SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1
-#SBATCH --mem=20G
+#SBATCH --mem=5G
 
 datasets=(cora_ml citeseer ppi pubmed mit)
 dims=(5 10 25 50)
@@ -30,7 +30,6 @@ seed=${seeds[$seed_id]}
 method=${methods[$method_id]}
 
 echo $dataset $dim $seed $method
-
 
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz 
