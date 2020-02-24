@@ -137,7 +137,7 @@ def load_hyperboloid(embedding_directory):
 
 def load_poincare(embedding_directory):
 	files = sorted(glob.iglob(os.path.join(embedding_directory, 
-		"*_embedding.csv.gz")))
+		"*embedding.csv.gz")))
 	embedding_filename = files[-1]
 	embedding = load_file(embedding_filename)
 
