@@ -6,6 +6,7 @@ import pandas as pd
 import glob
 
 from sklearn.metrics import average_precision_score, roc_auc_score, roc_curve
+from sklearn.metrics.pairwise import euclidean_distances
 
 import functools
 import fcntl
@@ -13,6 +14,7 @@ import fcntl
 import random
 
 def euclidean_distance(u, v):
+	assert len(u.shape) == len(v.shape) 
 	return np.linalg.norm(u - v, axis=-1)
 
 def minkowski_dot(x, y):
@@ -20,16 +22,18 @@ def minkowski_dot(x, y):
 	return np.sum(x[...,:-1] * y[...,:-1], axis=-1, keepdims=True) - x[...,-1:] * y[...,-1:]
 
 def hyperbolic_distance_hyperboloid(u, v):
+	assert len(u.shape) == len(v.shape)
 	mink_dp = -minkowski_dot(u, v)
 	mink_dp = np.maximum(mink_dp - 1, 1e-15)
 	return np.squeeze(np.arccosh(1 + mink_dp), axis=-1)
 
 def hyperbolic_distance_poincare(u, v):
-	norm_u = np.linalg.norm(u, keepdims=True, axis=-1)
+	assert len(u.shape) == len(v.shape)
+	norm_u = np.linalg.norm(u, keepdims=False, axis=-1)
 	norm_u = np.minimum(norm_u, np.nextafter(1,0, ))
-	norm_v = np.linalg.norm(v, keepdims=True, axis=-1)
+	norm_v = np.linalg.norm(v, keepdims=False, axis=-1)
 	norm_v = np.minimum(norm_v, np.nextafter(1,0, ))
-	uu = euclidean_distances(u - v) ** 2
+	uu = np.linalg.norm(u - v, keepdims=False, axis=-1, ) ** 2
 	dd = (1 - norm_u**2) * (1 - norm_v**2)
 	return np.arccosh(1 + 2 * uu / dd)
 
