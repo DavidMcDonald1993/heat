@@ -55,7 +55,8 @@ def main():
 	touch(test_results_lock_filename)
 
 	graph, _, _ = load_data(args)
-	assert nx.is_directed(graph)
+	assert not args.directed 
+	assert not nx.is_directed(graph)
 	print ("Loaded dataset")
 	print ()
 
@@ -63,7 +64,6 @@ def main():
 	
 	test_edges = list(graph.edges())
 
-	assert not args.directed 
 	test_edges += [(v, u) for u, v in test_edges]
 
 	num_edges = len(test_edges)
