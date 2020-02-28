@@ -19,6 +19,9 @@ num_dims=${#dims[@]}
 num_seeds=${#seeds[@]}
 num_alphas=${#alphas[@]}
 
+# for ((SLURM_ARRAY_TASK_ID=0; SLURM_ARRAY_TASK_ID<3600; SLURM_ARRAY_TASK_ID++))
+# do
+
 dataset_id=$((SLURM_ARRAY_TASK_ID / (num_alphas * num_seeds * num_dims) % num_datasets))
 dim_id=$((SLURM_ARRAY_TASK_ID / (num_alphas * num_seeds) % num_dims))
 seed_id=$((SLURM_ARRAY_TASK_ID / num_alphas % num_seeds ))
@@ -37,6 +40,14 @@ else
 fi
 
 echo $dataset $dim $seed $alpha
+
+#     if [ $dataset == pubmed ] && [ $dim == 50 ] && [ $alpha == "1.00" ] && [ $seed == 9 ]
+#     then 
+#         echo $SLURM_ARRAY_TASK_ID
+#         break
+#     fi
+
+# done
 
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz

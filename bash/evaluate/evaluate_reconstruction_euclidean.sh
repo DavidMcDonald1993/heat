@@ -19,6 +19,9 @@ num_dims=${#dims[@]}
 num_seeds=${#seeds[@]}
 num_methods=${#methods[@]}
 
+# for ((SLURM_ARRAY_TASK_ID=0; SLURM_ARRAY_TASK_ID<3600; SLURM_ARRAY_TASK_ID++))
+# do
+
 dataset_id=$((SLURM_ARRAY_TASK_ID / (num_methods * num_seeds * num_dims) % num_datasets))
 dim_id=$((SLURM_ARRAY_TASK_ID / (num_methods * num_seeds) % num_dims))
 seed_id=$((SLURM_ARRAY_TASK_ID / num_methods % num_seeds))
@@ -30,6 +33,15 @@ seed=${seeds[$seed_id]}
 method=${methods[$method_id]}
 
 echo $dataset $dim $seed $method
+
+#      if [ $dataset == mit ] && [ $dim == 25 ] && [ $method == attrpure ] && [ $seed == 9 ]
+#     then 
+#         echo $SLURM_ARRAY_TASK_ID
+#         break
+#     fi
+
+# done
+
 
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz 
