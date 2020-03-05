@@ -64,8 +64,10 @@ def evaluate_kfold_label_classification(embedding,
 	for split_train, split_test in sss.split(embedding, labels):
 		model.fit(embedding[split_train], labels[split_train])		
 		predictions = model.predict(embedding[split_test])
-		f1_micro = f1_score(labels[split_test], predictions, average="micro")
-		f1_macro = f1_score(labels[split_test], predictions, average="macro")
+		f1_micro = f1_score(labels[split_test], predictions, 
+			average="micro")
+		f1_macro = f1_score(labels[split_test], predictions, 
+			average="macro")
 		f1_micros.append(f1_micro)
 		f1_macros.append(f1_macro)
 		print ("Done {}/{} folds".format(i, k))

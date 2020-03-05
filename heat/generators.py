@@ -36,6 +36,7 @@ class TrainingDataGenerator(Sequence):
 
 		batch_negative_samples = np.array([
 			np.searchsorted(probs[u], 
+			# np.searchsorted(probs, 
 				np.random.rand(num_negative_samples))
 			for u, v in batch_positive_samples
 		], dtype=np.int32)

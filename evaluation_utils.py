@@ -6,7 +6,6 @@ import pandas as pd
 import glob
 
 from sklearn.metrics import average_precision_score, roc_auc_score, roc_curve
-from sklearn.metrics.pairwise import euclidean_distances
 
 import functools
 import fcntl

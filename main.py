@@ -324,9 +324,6 @@ def main():
 	graph, features, node_labels = load_data(args)
 	print ("Loaded dataset")
 
-	if False:
-		plot_degree_dist(graph, "degree distribution")
-
 	configure_paths(args)
 	print ("Configured paths")
 

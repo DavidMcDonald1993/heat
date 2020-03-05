@@ -184,7 +184,7 @@ def draw_graph(graph, embedding, labels, path, s=25):
     plt.savefig(path)
     plt.close()
 
-def plot_degree_dist(graph, title):
+def plot_degree_dist(graph, name, filename):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -204,6 +204,10 @@ def plot_degree_dist(graph, title):
 
     ax.scatter(deg, counts, marker="x")
     ax.plot(deg, y_fit, ':', c="r")
-    ax.set(title=title, xscale="log", yscale="log", xlabel="Connections", ylabel="Frequency",)
+    ax.set(title="{} Degree Distribution".format(name), 
+        xscale="log", yscale="log", 
+        xlabel="Connections", ylabel="Frequency",)
     ax.set_ylim(bottom=.9)
-    plt.show()
+    # plt.show()
+    print ("saving degree distribution plot to", filename)
+    plt.savefig(filename)
