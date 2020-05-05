@@ -5,7 +5,12 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import StratifiedShuffleSplit, StratifiedKFold
 from sklearn.multiclass import OneVsRestClassifier
-from sklearn.metrics import f1_score
+from sklearn.metrics import (roc_auc_score, 
+        f1_score, 
+        accuracy_score,
+        precision_score, 
+        recall_score)
+from sklearn.preprocessing import LabelBinarizer
 
 from skmultilearn.model_selection import IterativeStratification
 
@@ -18,30 +23,32 @@ import argparse
 
 from collections import Counter
 
-# def hamming_score(y_true, y_pred, normalize=True, sample_weight=None):
-#     '''
-#     Compute the Hamming score (a.k.a. label-based accuracy) for the multi-label case
-#     https://stackoverflow.com/q/32239577/395857
-#     '''
-#     acc_list = []
-#     for i in range(y_true.shape[0]):
-#         set_true = set( np.where(y_true[i])[0] )
-#         set_pred = set( np.where(y_pred[i])[0] )
-#         tmp_a = None
-#         if len(set_true) == 0 and len(set_pred) == 0:
-#             tmp_a = 1
-#         else:
-#             tmp_a = len(set_true.intersection(set_pred))/\
-#                     float( len(set_true.union(set_pred)) )
-#         acc_list.append(tmp_a)
-#     return np.mean(acc_list)
+def compute_measures( 
+    labels, 
+    probs,
+	threshold=.5,
+	average="micro"):
 
-def evaluate_kfold_label_classification(embedding, 
+	if len(labels.shape) == 1:
+		labels = LabelBinarizer().fit_transform(labels)
+
+	roc = roc_auc_score(labels, probs, average=average)
+	pred = probs > threshold
+	f1 = f1_score(labels, pred, average=average)
+	# accuracy = accuracy_score(labels, pred, )
+	precision = precision_score(labels, pred, average=average)
+	recall = recall_score(labels, pred, average=average )
+
+	return roc, f1, precision, recall
+
+def evaluate_kfold_label_classification(
+	embedding, 
 	labels, 
 	k=10):
 	assert len(labels.shape) == 2
 	
-	model = LogisticRegressionCV(n_jobs=-1)
+	model = LogisticRegressionCV(max_iter=1000, 
+		n_jobs=-1)
 
 	if labels.shape[1] == 1:
 		print ("single label clasification")
@@ -53,28 +60,44 @@ def evaluate_kfold_label_classification(embedding,
 	else:
 		print ("multi-label classification")
 		sss = IterativeStratification(n_splits=k, 
-			random_state=0,
-			order=2)
-		model = OneVsRestClassifier(model)
+			# random_state=0,
+			order=1)
+		model = OneVsRestClassifier(model, )
 			
-	f1_micros = []
-	f1_macros = []
+	k_fold_rocs = np.zeros(k)
+	k_fold_f1s = np.zeros(k)
+	# k_fold_accuracies = np.zeros(k)
+	k_fold_precisions = np.zeros(k)
+	k_fold_recalls = np.zeros(k)
 
-	i = 1
-	for split_train, split_test in sss.split(embedding, labels):
-		model.fit(embedding[split_train], labels[split_train])		
-		predictions = model.predict(embedding[split_test])
-		f1_micro = f1_score(labels[split_test], predictions, 
-			average="micro")
-		f1_macro = f1_score(labels[split_test], predictions, 
-			average="macro")
-		f1_micros.append(f1_micro)
-		f1_macros.append(f1_macro)
-		print ("Done {}/{} folds".format(i, k))
-		i += 1
-	return np.mean(f1_micros), np.mean(f1_macros)
+	for i, (split_train, split_test) in enumerate(\
+		sss.split(embedding, labels, )):
+		print ("Fold", i+1, "fitting model")
+		model.fit(embedding[split_train], labels[split_train])	
+		probs = model.predict_proba(embedding[split_test])
 
-def evaluate_node_classification(embedding, 
+		(k_fold_rocs[i], 
+			k_fold_f1s[i], 
+			# k_fold_accuracies[i], 
+			k_fold_precisions[i], 
+			k_fold_recalls[i]) = compute_measures(
+				labels[split_test],
+				probs,)
+
+		# predictions = model.predict(embedding[split_test])
+		# f1_micro = f1_score(labels[split_test], predictions, 
+		# 	average="micro")
+		# f1_macro = f1_score(labels[split_test], predictions, 
+		# 	average="macro")
+		# f1_micros.append(f1_micro)
+		# f1_macros.append(f1_macro)
+		print ("Completed {}/{} folds".format(i+1, k))
+
+	return (np.mean(k_fold_rocs), np.mean(k_fold_f1s),
+		np.mean(k_fold_precisions), np.mean(k_fold_recalls))
+
+def evaluate_node_classification(
+	embedding, 
 	labels,
 	label_percentages=np.arange(0.02, 0.11, 0.01), 
 	n_repeats=10):
@@ -84,29 +107,37 @@ def evaluate_node_classification(embedding,
 	f1_micros = np.zeros((n_repeats, len(label_percentages)))
 	f1_macros = np.zeros((n_repeats, len(label_percentages)))
 	
-	model = LogisticRegressionCV(n_jobs=-1)
+	model = LogisticRegressionCV(max_iter=1000,
+		n_jobs=-1)
 
 	if labels.shape[1] == 1:
 		print ("single label clasification")
 		labels = labels.flatten()
 
 		split = StratifiedShuffleSplit
-
 		for seed in range(n_repeats):
 		
 			for i, label_percentage in enumerate(label_percentages):
-
-				sss = split(n_splits=1, test_size=1-label_percentage, random_state=seed)
-				split_train, split_test = next(sss.split(embedding, labels.flatten()))
+				print ("processing label percentage", i, 
+					":", "{:.02f}".format(label_percentage))
+				sss = split(n_splits=1, 
+					test_size=1-label_percentage, 
+					random_state=seed)
+				split_train, split_test = next(sss.split(embedding, 
+					labels))
 				
 				model.fit(embedding[split_train], labels[split_train])
 				predictions = model.predict(embedding[split_test])
-				f1_micro = f1_score(labels[split_test], predictions, average="micro")
-				f1_macro = f1_score(labels[split_test], predictions, average="macro")
-				print ("{:.02f}".format(label_percentage), f1_micro)
 
-				f1_micros[seed,i] = f1_micro
-				f1_macros[seed,i] = f1_macro
+				f1_micro = f1_score(labels[split_test], predictions, 
+					average="micro")
+				f1_macro = f1_score(labels[split_test], predictions, 
+					average="macro")
+				print ("{:.02f}".format(label_percentage), 
+					f1_micro, f1_macro)
+
+				f1_micros[seed, i] = f1_micro
+				f1_macros[seed, i] = f1_macro
 			print ("completed repeat {}".format(seed+1))
 
 	else: # multilabel classification
@@ -117,14 +148,17 @@ def evaluate_node_classification(embedding,
 		for seed in range(n_repeats):
 		
 			for i, label_percentage in enumerate(label_percentages):
-
-				sss = split(n_splits=2, order=3, random_state=seed,
+				print ("processing label percentage", i, 
+					":", "{:.02f}".format(label_percentage))
+				sss = split(n_splits=2, order=1, #random_state=seed,
 					sample_distribution_per_fold=[1.0-label_percentage, label_percentage])
 				split_train, split_test = next(sss.split(embedding, labels))
 				model.fit(embedding[split_train], labels[split_train])
 				predictions = model.predict(embedding[split_test])
-				f1_micro = f1_score(labels[split_test], predictions, average="micro")
-				f1_macro = f1_score(labels[split_test], predictions, average="macro")
+				f1_micro = f1_score(labels[split_test], predictions, 
+					average="micro")
+				f1_macro = f1_score(labels[split_test], predictions, 
+					average="macro")
 				f1_micros[seed,i] = f1_micro
 				f1_macros[seed,i] = f1_macro
 			print ("completed repeat {}".format(seed+1))
@@ -179,52 +213,54 @@ def main():
 
 	embedding = load_embedding(args.dist_fn, args.embedding_directory)
 
-
+	min_count = 10
 	if node_labels.shape[1] == 1: # remove any node belonging to an under-represented class
-		min_count = 10
 		label_counts = Counter(node_labels.flatten())
 		mask = np.array([label_counts[l] >= min_count
 			for l in node_labels.flatten()])
 		embedding = embedding[mask]
 		node_labels = node_labels[mask]
+	else:
+		assert node_labels.shape[1] > 1
+		idx = node_labels.sum(0) >= min_count
+		node_labels = node_labels[:, idx]
+		idx = node_labels.any(-1)
+		embedding = embedding[idx]
+		node_labels = node_labels[idx]
 
 	if args.dist_fn == "hyperboloid":
 		print ("loaded a hyperboloid embedding")
 		print ("projecting from hyperboloid to klein")
-		print (embedding.shape)
 		embedding = hyperboloid_to_klein(embedding)
-		print (embedding.shape)
 
 	elif args.dist_fn == "poincare":
 		print ("loaded a poincare embedding")
 		print ("projecting from poincare to klein")
-		print (embedding.shape)
 		embedding = poincare_ball_to_hyperboloid(embedding)
 		embedding = hyperboloid_to_klein(embedding)
-		print (embedding.shape)
 
-
+	test_results = {}
+	
 	label_percentages, f1_micros, f1_macros = \
 		evaluate_node_classification(embedding, node_labels)
 
-	k_fold_f1_micro, k_fold_f1_macro = \
-		evaluate_kfold_label_classification(embedding, node_labels, k=10)
-
-	test_results = {}
 	for label_percentage, f1_micro, f1_macro in zip(label_percentages, f1_micros, f1_macros):
-		print ("{:.2f}".format(label_percentage), "micro = {:.2f}".format(f1_micro), "macro = {:.2f}".format(f1_macro) )
+		print ("{:.2f}".format(label_percentage), 
+			"micro = {:.2f}".format(f1_micro), 
+			"macro = {:.2f}".format(f1_macro) )
 		test_results.update({"{:.2f}_micro".format(label_percentage): f1_micro})
 		test_results.update({"{:.2f}_macro".format(label_percentage): f1_macro})
 
-	test_results.update({"10-fold-f1_micro": k_fold_f1_micro, "10-fold-f1-macro": k_fold_f1_macro})
+	k = 10
+	k_fold_roc, k_fold_f1, k_fold_precision, k_fold_recall = \
+		evaluate_kfold_label_classification(embedding, node_labels, k=k)
 
-	# test_results_dir = args.test_results_dir
-	# if not os.path.exists(test_results_dir):
-	# 	os.makedirs(test_results_dir)
-	# test_results_filename = os.path.join(test_results_dir, "test_results.csv")
-	# test_results_lock_filename = os.path.join(test_results_dir, "test_results.lock")
-
-	# touch (test_results_lock_filename)
+	test_results.update({
+		"{}-fold-roc".format(k): k_fold_roc, 
+		"{}-fold-f1".format(k): k_fold_f1,
+		"{}-fold-precision".format(k): k_fold_precision,
+		"{}-fold-recall".format(k): k_fold_recall,
+		})
 
 	print ("saving test results to {}".format(test_results_filename))
 	threadsafe_save_test_results(test_results_lock_filename, test_results_filename, args.seed, data=test_results )
