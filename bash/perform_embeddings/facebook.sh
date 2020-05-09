@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=HEATMIT
-#SBATCH --output=HEATMIT_%A_%a.out
-#SBATCH --error=HEATMIT_%A_%a.err
+#SBATCH --job-name=HEATFB
+#SBATCH --output=HEATFB_%A_%a.out
+#SBATCH --error=HEATFB_%A_%a.err
 #SBATCH --array=0-1439
 #SBATCH --time=10-00:00:00
 #SBATCH --ntasks=2
@@ -10,7 +10,7 @@
 
 e=5
 
-datasets=(mit)
+datasets=(facebook)
 dims=(5 10 25 50)
 seeds=({0..29})
 alphas=(00 05 10 20 50 100)
@@ -41,6 +41,8 @@ else
 	alpha=0.$alpha
 fi
 
+exp=nc_experiment
+
 echo $dataset $dim $seed $alpha $exp
 
 data_dir=datasets/${dataset}
@@ -58,7 +60,7 @@ embedding_dir=$(printf "embeddings/${dir}/dim=%03d" ${dim} )
 walks_dir=walks/${dir}
 
 embedding_f=$(printf "${embedding_dir}/%05d_embedding.csv.gz" ${e})
-if [ ! -f ${embedding_f} ]
+if [ ! -f $embedding_f ]
 then
 	module purge
 	module load bluebear

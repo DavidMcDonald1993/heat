@@ -148,62 +148,6 @@ def alias_draw(J, q, size=1):
 	kk[idx] = J[kk[idx]]
 	return kk
 
-# def convert_edgelist_to_dict(edgelist, undirected=True, self_edges=False):
-# 	if edgelist is None:
-# 		return None
-# 	if undirected:
-# 		edgelist += [(v, u) for u, v in edgelist]
-# 	edge_dict = {}
-# 	for u, v in edgelist:
-# 		if self_edges:
-# 			default = set(u)
-# 		else:
-# 			default = set()
-# 		edge_dict.setdefault(u, default).add(v)
-# 	edge_dict = {k: list(v) for k, v in edge_dict.items()}
-
-# 	return edge_dict
-
-# def get_training_sample(samples, num_negative_samples, ):
-# 	positive_sample_pair, probs = samples
-# 	negative_samples_ = np.random.choice(len(probs), replace=True, size=num_negative_samples, p=probs)
-# 	return np.append(positive_sample_pair, negative_samples_, )
-
-# def build_training_samples(positive_samples, negative_samples, num_negative_samples, alias_dict):
-# 	input_nodes = positive_samples[:,0]
-# 	print ("Building training samples")
-	
-# 	with Pool(processes=2) as p:
-# 		training_samples = p.map(functools.partial(get_training_sample,
-# 			num_negative_samples=num_negative_samples,
-# 			),
-# 			zip(positive_samples,
-# 				# (negative_samples[u] for u in input_nodes),
-# 				(alias_dict[u] for u in input_nodes)))
-# 	return np.array(training_samples)
-
-# def create_second_order_topology_graph(topology_graph, args):
-
-# 	adj = nx.adjacency_matrix(topology_graph).A
-# 	adj_sim = cosine_similarity(adj)
-# 	adj_sim -= np.identity(len(topology_graph))
-# 	adj_sim [adj_sim  < args.rho] = 0
-# 	second_order_topology_graph = nx.from_numpy_matrix(adj_sim)
-
-# 	print ("Created second order topology graph graph with {} edges".format(len(second_order_topology_graph.edges())))
-
-# 	return second_order_topology_graph
-
-# def create_feature_graph(features, args):
-
-# 	features_sim = cosine_similarity(features)
-# 	features_sim -= np.identity(len(features))
-# 	features_sim [features_sim  < args.rho] = 0
-# 	feature_graph = nx.from_numpy_matrix(features_sim)
-
-# 	print ("Created feature correlation graph with {} edges".format(len(feature_graph.edges())))
-
-# 	return feature_graph
 
 def determine_positive_and_negative_samples(graph, features, args):
 
@@ -222,15 +166,21 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		positive_samples = list(graph.edges())
 		positive_samples += [(v, u) 
-			for (u, v) in positive_samples]
-		
-		if not args.all_negs:
-			for n in sorted(graph.nodes()):
-				negative_samples[n, list(graph.neighbors(n))] = 0
+			for u, v in positive_samples]
 
-		if not args.no_walks:
+		if args.no_walks:
+			counts = np.array([graph.degree(u)
+				for u in sorted(graph)])
 
-			print ("determining positive and negative samples using random walks")
+			if not args.all_negs:
+				for n in nodes:
+					negative_samples[n, list(graph.neighbors(n))] = 0
+	
+		else:
+			counts = np.zeros(N)
+
+			print ("determining positive and negative samples", 
+				"using random walks")
 
 			walks = perform_walks(graph, features, args)
 
@@ -239,6 +189,7 @@ def determine_positive_and_negative_samples(graph, features, args):
 			for num_walk, walk in enumerate(walks):
 				for i in range(len(walk)):
 					u = walk[i]
+					counts[u] += 1
 					for j in range(context_size):
 
 						if i+j+1 >= len(walk):
@@ -258,21 +209,15 @@ def determine_positive_and_negative_samples(graph, features, args):
 					print ("processed walk {:04d}/{}".format(
 						num_walk, len(walks)))
 
-
 		print ("DETERMINED POSITIVE AND NEGATIVE SAMPLES")
 		print ("found {} positive sample pairs".format(
 			len(positive_samples)))
 
-		counts = np.zeros(N)
-
-		for u, v in positive_samples:
-			counts[u] += 1
-			counts[v] += 1
-
 		counts = counts ** 0.75
 		probs = counts[None, :] 
 		probs = probs * negative_samples
-		assert (probs > 0).any(axis=-1).all(), "a node in the network does not have any negative samples"
+		assert ((probs > 0).any(axis=-1).all(), 
+			"a node in the network does not have any negative samples")
 		probs /= probs.sum(axis=-1, keepdims=True)
 		probs = probs.cumsum(axis=-1)
 
@@ -306,7 +251,9 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 		return positive_samples, negative_samples
 
-	positive_samples, probs = determine_positive_samples_and_probs(graph, features, args)
+	positive_samples, probs = \
+		determine_positive_samples_and_probs(
+			graph, features, args)
 
 	if not args.use_generator:
 		print("Training without generator -- selecting negative samples before training")
@@ -317,7 +264,7 @@ def determine_positive_and_negative_samples(graph, features, args):
 		print ("Training with data generator -- skipping selection of negative samples")
 		negative_samples = None 
 
-	return positive_samples, negative_samples, probs# negative_samples, alias_dict
+	return positive_samples, negative_samples, probs
 
 def choose_negative_samples(x, num_negative_samples):
 		u, count, probs = x

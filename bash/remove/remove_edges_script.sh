@@ -21,8 +21,6 @@ dataset=${datasets[$dataset_id]}
 seed=${seeds[$seed_id]}
 
 edgelist=datasets/${dataset}/edgelist.tsv.gz 
-features=datasets/${dataset}/feats.csv.gz 
-labels=datasets/${dataset}/labels.csv.gz 
 output=edgelists/${dataset}
 
 edgelist_f=$(printf "${output}/seed=%03d/training_edges/edgelist.tsv" ${seed} )
@@ -31,11 +29,10 @@ if [ ! -f $edgelist_f  ]
 then
 	module purge
 	module load bluebear
-	module load apps/python3/3.5.2
+	module load future/0.16.0-foss-2018b-Python-3.6.6
 
-	args=$(echo --edgelist $edgelist \
-	--features $features --labels $labels \
-	--output $output --seed $seed)
+	args=$(echo --edgelist ${edgelist} \
+	--output ${output} --seed $seed)
 
-	python remove_edges.py $args
+	python remove_edges.py ${args}
 fi

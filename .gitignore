@@ -21,3 +21,4 @@ evaluate_script.sh
 evaluate_script_nk.sh
 jupyter_notebooks
 bash/perform_embeddings/perform_*.sh
+collated_results

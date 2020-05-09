@@ -44,8 +44,6 @@ def main():
 
 	args = parse_args()
 
-
-
 	test_results_dir = args.test_results_dir
 	if not os.path.exists(test_results_dir):
 		os.makedirs(test_results_dir, exist_ok=True)
@@ -67,8 +65,6 @@ def main():
 	seed = args.seed
 	random.seed(seed)
 
-	# removed_edges_dir = os.path.join(args.output, 
-	# 	"seed={:03d}".format(seed), "removed_edges")
 	removed_edges_dir = args.removed_edges_dir
 
 	test_edgelist_fn = os.path.join(removed_edges_dir, 
@@ -89,7 +85,7 @@ def main():
 	print ("number of test non edges:", len(test_non_edges))
 
 	embedding = load_embedding(args.dist_fn, 
-	args.embedding_directory)
+		args.embedding_directory)
 
 	test_results = dict()
 
@@ -100,7 +96,8 @@ def main():
 			test_non_edges,
 			args.dist_fn)
 
-	test_results.update({"mean_rank_lp": mean_rank_lp, 
+	test_results.update(
+		{"mean_rank_lp": mean_rank_lp, 
 		"ap_lp": ap_lp,
 		"roc_lp": roc_lp})
 
@@ -118,7 +115,8 @@ def main():
 	test_results.update({"p@{}".format(k): pk
 		for k, pk in precisions_at_k.items()})
 
-	print ("saving test results to {}".format(test_results_filename))
+	print ("saving test results to {}".format(
+		test_results_filename))
 
 	threadsafe_save_test_results(test_results_lock_filename, 
 		test_results_filename, seed, data=test_results )

@@ -7,7 +7,6 @@ from sklearn.model_selection import StratifiedShuffleSplit, StratifiedKFold
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import (roc_auc_score, 
         f1_score, 
-        accuracy_score,
         precision_score, 
         recall_score)
 from sklearn.preprocessing import LabelBinarizer
@@ -35,7 +34,6 @@ def compute_measures(
 	roc = roc_auc_score(labels, probs, average=average)
 	pred = probs > threshold
 	f1 = f1_score(labels, pred, average=average)
-	# accuracy = accuracy_score(labels, pred, )
 	precision = precision_score(labels, pred, average=average)
 	recall = recall_score(labels, pred, average=average )
 
@@ -47,7 +45,8 @@ def evaluate_kfold_label_classification(
 	k=10):
 	assert len(labels.shape) == 2
 	
-	model = LogisticRegressionCV(max_iter=1000, 
+	model = LogisticRegressionCV(
+		max_iter=1000, 
 		n_jobs=-1)
 
 	if labels.shape[1] == 1:
@@ -60,13 +59,11 @@ def evaluate_kfold_label_classification(
 	else:
 		print ("multi-label classification")
 		sss = IterativeStratification(n_splits=k, 
-			# random_state=0,
 			order=1)
 		model = OneVsRestClassifier(model, )
 			
 	k_fold_rocs = np.zeros(k)
 	k_fold_f1s = np.zeros(k)
-	# k_fold_accuracies = np.zeros(k)
 	k_fold_precisions = np.zeros(k)
 	k_fold_recalls = np.zeros(k)
 
@@ -78,19 +75,11 @@ def evaluate_kfold_label_classification(
 
 		(k_fold_rocs[i], 
 			k_fold_f1s[i], 
-			# k_fold_accuracies[i], 
 			k_fold_precisions[i], 
 			k_fold_recalls[i]) = compute_measures(
 				labels[split_test],
 				probs,)
 
-		# predictions = model.predict(embedding[split_test])
-		# f1_micro = f1_score(labels[split_test], predictions, 
-		# 	average="micro")
-		# f1_macro = f1_score(labels[split_test], predictions, 
-		# 	average="macro")
-		# f1_micros.append(f1_micro)
-		# f1_macros.append(f1_macro)
 		print ("Completed {}/{} folds".format(i+1, k))
 
 	return (np.mean(k_fold_rocs), np.mean(k_fold_f1s),

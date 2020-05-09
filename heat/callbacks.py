@@ -12,7 +12,8 @@ from .utils import hyperboloid_to_poincare_ball
 from keras.callbacks import Callback
 
 def minkowski_dot(u):
-	return (u[:,:-1] ** 2).sum(axis=-1, keepdims=True) - u[:,-1:] ** 2
+	return ((u[...,:-1] ** 2).sum(axis=-1, keepdims=True) 
+		- u[...,-1:] ** 2)
 
 class Checkpointer(Callback):
 
@@ -20,25 +21,28 @@ class Checkpointer(Callback):
 		epoch,
 		nodes,
 		embedding_directory,
-		frequency=1,
+		history=1,
 		):
 		self.epoch = epoch
 		self.nodes = nodes
 		self.embedding_directory = embedding_directory
-		self.frequency = frequency
+		self.history = history
 
 	def on_epoch_end(self, batch, logs={}):
 		self.epoch += 1
-		print ("Epoch {} complete".format(self.epoch)) 
-		if self.epoch % self.frequency == 0:
-			self.remove_old_models()
-			self.save_model()
+		print ("\nEpoch {} complete".format(self.epoch)) 
+		self.remove_old_models()
+		self.save_model()
 
 	def remove_old_models(self):
 		embedding_directory = self.embedding_directory
-		for old_model_path in filter(
-			re.compile("[0-9]+_embedding.csv.gz").match, 
-			os.listdir(embedding_directory)):
+		history = self.history
+		old_model_paths = sorted(filter(
+			re.compile("[0-9]+\_embedding\.csv\.gz").match, 
+			os.listdir(embedding_directory)))
+		if history > 0:
+			old_model_paths = old_model_paths[:-history]
+		for old_model_path in old_model_paths:
 			print ("removing model: {}".format(old_model_path))
 			os.remove(os.path.join(embedding_directory, 
 				old_model_path))
@@ -49,13 +53,15 @@ class Checkpointer(Callback):
 		embedding = self.model.get_weights()[0]
 		print ("saving current embedding to {}".format(filename))
 
+		assert np.allclose(minkowski_dot(embedding,), -1, )
+
 		embedding_df = pd.DataFrame(embedding, index=self.nodes)
 		embedding_df.to_csv(filename, compression="gzip")
 
-		embedding_poincare = hyperboloid_to_poincare_ball(embedding)
-
-		print (np.linalg.norm(embedding_poincare.mean(0)))
-
-		norms = np.linalg.norm(embedding_poincare, axis=-1)
-		print ("min", norms.min(), "mean", norms.mean(), 
-			"max", norms.max())
+		poincare_embedding = hyperboloid_to_poincare_ball(
+			embedding)
+		norms = np.linalg.norm(poincare_embedding, axis=-1)
+		print ("MIN", norms.min(), 
+			"MEAN", norms.mean(),
+			"MAX", norms.max())
+		print (np.linalg.norm(poincare_embedding.mean(0)))

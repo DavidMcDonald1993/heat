@@ -3,15 +3,15 @@
 #SBATCH --job-name=HEATPPI
 #SBATCH --output=HEATPPI_%A_%a.out
 #SBATCH --error=HEATPPI_%A_%a.err
-#SBATCH --array=0-1799
+#SBATCH --array=0-1439
 #SBATCH --time=10-00:00:00
-#SBATCH --ntasks=1
-#SBATCH --mem=2G
+#SBATCH --ntasks=2
+#SBATCH --mem=10G
 
 e=5
 
 datasets=(ppi)
-dims=(2 5 10 25 50)
+dims=(5 10 25 50)
 seeds=({0..29})
 alphas=(00 05 10 20 50 100)
 exps=(lp_experiment nc_experiment)
@@ -34,9 +34,13 @@ seed=${seeds[$seed_id]}
 alpha=${alphas[$alpha_id]}
 exp=${exps[$exp_id]}
 
+exp=nc_experiment
+dim=2
+
 if [ $alpha -eq 100 ];
 then
-	alpha=1.00
+	alpha=1.00.
+	
 else
 	alpha=0.$alpha
 fi
@@ -67,7 +71,9 @@ then
 
 	args=$(echo --edgelist ${edgelist} --features ${features} \
 	--embedding ${embedding_dir} --walks ${walks_dir} \
-	--num-walks 10 --walk-length 15 \
+	--num-walks 10 --walk-length 80 \
+	--use-generator --workers 1 \
+	--context-size 10 --all-negs \
 	--seed ${seed} --dim ${dim} \
 	--alpha ${alpha} -e ${e})
 
