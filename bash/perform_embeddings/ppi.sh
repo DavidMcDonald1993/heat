@@ -34,9 +34,6 @@ seed=${seeds[$seed_id]}
 alpha=${alphas[$alpha_id]}
 exp=${exps[$exp_id]}
 
-exp=nc_experiment
-dim=2
-
 if [ $alpha -eq 100 ];
 then
 	alpha=1.00.
