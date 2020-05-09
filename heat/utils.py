@@ -216,8 +216,8 @@ def determine_positive_and_negative_samples(graph, features, args):
 		counts = counts ** 0.75
 		probs = counts[None, :] 
 		probs = probs * negative_samples
-		assert ((probs > 0).any(axis=-1).all(), 
-			"a node in the network does not have any negative samples")
+		assert (probs > 0).any(axis=-1).all(), \
+			"a node in the network does not have any negative samples"
 		probs /= probs.sum(axis=-1, keepdims=True)
 		probs = probs.cumsum(axis=-1)
 
