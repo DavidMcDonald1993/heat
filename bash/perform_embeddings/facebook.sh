@@ -75,6 +75,7 @@ then
 	--seed ${seed} --dim ${dim} \
 	--alpha ${alpha} -e ${e})
 
+	ulimit -c 0
 	python main.py ${args}
 
 else 

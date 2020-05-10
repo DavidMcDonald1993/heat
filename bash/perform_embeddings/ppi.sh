@@ -36,7 +36,7 @@ exp=${exps[$exp_id]}
 
 if [ $alpha -eq 100 ];
 then
-	alpha=1.00.
+	alpha=1.00
 	
 else
 	alpha=0.$alpha
@@ -74,6 +74,7 @@ then
 	--seed ${seed} --dim ${dim} \
 	--alpha ${alpha} -e ${e})
 
+	ulimit -c 0
 	python main.py ${args}
 
 else 
