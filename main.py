@@ -114,6 +114,9 @@ def parse_args():
 	parser.add_argument('--no-walks', action="store_true", 
 		help='flag to only train on edgelist (no random walks)')
 
+	parser.add_argument('--save-walks', action="store_true", 
+		help='flag to save walks to walk path')
+
 	parser.add_argument('--all-negs', action="store_true", 
 		help='flag to only train using all nodes as negative samples')
 

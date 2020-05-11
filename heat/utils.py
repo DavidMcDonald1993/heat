@@ -29,11 +29,14 @@ def load_data(args):
 	features_filename = args.features
 	labels_filename = args.labels
 
+	print ("reading edgelist from", edgelist_filename)
+
 	graph = nx.read_weighted_edgelist(edgelist_filename, delimiter="\t", nodetype=int,
 		create_using=nx.DiGraph() if args.directed else nx.Graph())
 
 	print ("removing all edges with zero weight")
-	zero_weight_edges = [(u, v) for u, v, w in graph.edges(data="weight") if w == 0.]
+	zero_weight_edges = [(u, v) 
+		for u, v, w in graph.edges(data="weight") if w == 0.]
 	print ("found", len(zero_weight_edges), "edges with zero weight")
 	graph.remove_edges_from(zero_weight_edges)
 
@@ -44,7 +47,8 @@ def load_data(args):
 	for u in range(len(graph)):
 		assert u in graph
 
-	print ("number of nodes: {}\nnumber of edges: {}\n".format(len(graph), len(graph.edges())))
+	print ("number of nodes: {}".format(len(graph)))
+	print ("number of edges: {}".format(len(graph.edges)))
 
 	if features_filename is not None:
 
@@ -316,8 +320,10 @@ def perform_walks(graph, features, args):
 			seed=args.seed)
 		node2vec_graph.preprocess_transition_probs()
 		walks = node2vec_graph.simulate_walks(num_walks=args.num_walks, walk_length=args.walk_length)
-		save_walks_to_file(walks, walk_file)
-		print ("saved walks to {}".format(walk_file))
+		
+		if args.save_walks: 
+			save_walks_to_file(walks, walk_file)
+			print ("saved walks to {}".format(walk_file))
 
 	else:
 		print ("loading walks from {}".format(walk_file))
