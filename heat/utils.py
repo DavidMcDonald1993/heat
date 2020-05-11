@@ -48,7 +48,7 @@ def load_data(args):
 		assert u in graph
 
 	print ("number of nodes: {}".format(len(graph)))
-	print ("number of edges: {}".format(len(graph.edges)))
+	print ("number of edges: {}".format(len(graph.edges())))
 
 	if features_filename is not None:
 
