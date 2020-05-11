@@ -34,19 +34,21 @@ def split_edges(graph,
 
 	# ensure every node appears in edgelist
 	nodes = set(graph)
-	if cover:
-		cover = []
 
+	cover_edges  = []
+
+	if cover:
 		for u, v in edges:
 			if u in nodes or v in nodes:
 				nodes -= {u, v}
-				cover.append((u, v))
+				cover_edges.append((u, v))
 			if len(nodes) == 0:
 				break
 		
 		print ("determined cover")
 
-		edges = filter(lambda edge: edge not in cover, edges)
+		edges = filter(lambda edge: 
+			edge not in cover_edges, edges)
 		print ("filtered cover out of edges")
 
 	val_edges = []
@@ -60,7 +62,7 @@ def split_edges(graph,
 		else:
 			train_edges.append(edge)
 
-	train_edges += cover
+	train_edges += cover_edges
 	print ("determined edge split")
 
 	val_non_edges = sample_non_edges(graph, 
