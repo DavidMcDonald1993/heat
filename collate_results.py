@@ -81,11 +81,11 @@ def main():
 
 				dfs[algorithm] = results_df
 
-				mean_df = collated_df.append(pd.Series(
+				mean_df = mean_df.append(pd.Series(
 					results_df.mean(0), name=algorithm
 				))
 
-				sem_df = collated_df.append(pd.Series(
+				sem_df = sem_df.append(pd.Series(
 					results_df.sem(0), name=algorithm
 				))
 
