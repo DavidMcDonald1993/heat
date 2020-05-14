@@ -57,6 +57,7 @@ def main():
 
 		output_dir_ = os.path.join(output_dir, 
 			dim)
+		make_dir(output_dir_)
 
 		for dataset in datasets:
 
