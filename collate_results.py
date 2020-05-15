@@ -2,7 +2,7 @@ import pandas as pd
 import argparse
 import os
 
-from scipy.stats import ttest_rel
+from scipy.stats import ttest_ind
 import itertools
 
 def make_dir(d):
@@ -52,6 +52,7 @@ def main():
 	output_dir = os.path.join(args.output, exp) 
 	make_dir(output_dir)
 
+	critical_value = 0.05
 
 	for dim in dims:
 
@@ -76,7 +77,8 @@ def main():
 					"test_results.csv")
 				print ("reading", results_file)
 
-				results_df = pd.read_csv(results_file, index_col=0, sep=",")
+				results_df = pd.read_csv(results_file, 
+					index_col=0, sep=",")
 				assert results_df.shape[0] == num_seeds, \
 					(dataset, dim, algorithm)
 
@@ -101,15 +103,40 @@ def main():
 			sem_df.to_csv(sem_filename)
 
 			# perform t tests
-			for a1, a2 in itertools.product(heat_algs, 
+			ttest_dir = os.path.join(output_dir_, 
+				"t-tests")
+			make_dir(ttest_dir)
+
+			for a1, a2 in itertools.product(
+				heat_algs, 
 				baseline_algs):
 
-				ttest = ttest_rel(dfs[a1], dfs[a2])
-				ttest_df = pd.DataFrame(ttest, 
-					columns=dfs[a1].columns,
-					index=["t-statistic", "p-value"])
+				# obtain the means
+				m1 = mean_df.loc[a1]
+				m2 = mean_df.loc[a2]
 
-				ttest_df_filename = os.path.join(output_dir_,
+				index = m1.index
+
+				t, p = ttest_ind(dfs[a1], dfs[a2],
+					nan_policy="omit", equal_var=False)
+
+				# rank should be minimum
+				t[index.str.contains("rank")] = -t[index.str.contains("rank")]
+
+				p /= 2 # one tailed ttest
+				p[t<0] = 1-p[t<0]
+				
+
+				t = pd.Series(t, index=index, name="t-statistic")
+				p = pd.Series(p, index=index, name="p-value")
+				reject_null = pd.Series(p < critical_value, 
+					index=index,
+					name="rejected_null?")
+
+				ttest_df = pd.DataFrame([m1, m2, t, p, reject_null], )
+
+
+				ttest_df_filename = os.path.join(ttest_dir,
 					"{}_{}_ttest-{}-{}.csv".format(dataset, dim,
 						a1, a2))
 				print ("writing ttests for", a1, "and", a2,
