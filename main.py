@@ -181,16 +181,18 @@ def main():
 		Checkpointer(epoch=initial_epoch, 
 			nodes=sorted(graph.nodes()), 
 			embedding_directory=args.embedding_path)
-	]			
+	]		
 
 	positive_samples, negative_samples, probs = \
 		determine_positive_and_negative_samples(graph, 
 		features, args)
 
-	del features # remove features reference to free up memory
+	# del features # remove features reference to free up memory
+	# if not args.visualise:
+	# 	del graph
 
 	if args.use_generator:
-		print ("Training with data generator with {} worker threads".format(args.workers))
+		print ("Training using data generator with {} worker threads".format(args.workers))
 		training_generator = TrainingDataGenerator(
 			positive_samples,  
 			probs,

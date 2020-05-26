@@ -31,7 +31,9 @@ def load_data(args):
 
 	print ("reading edgelist from", edgelist_filename)
 
-	graph = nx.read_weighted_edgelist(edgelist_filename, delimiter="\t", nodetype=int,
+	graph = nx.read_weighted_edgelist(edgelist_filename, delimiter="\t", 
+		# nodetype=int,
+		nodetype=np.uint16,
 		create_using=nx.DiGraph() if args.directed else nx.Graph())
 
 	print ("removing all edges with zero weight")
@@ -168,11 +170,12 @@ def determine_positive_and_negative_samples(graph, features, args):
 		negative_samples = np.ones((N, N), dtype=bool)
 		np.fill_diagonal(negative_samples, 0)
 
-		positive_samples = list(graph.edges())
-		positive_samples += [(v, u) 
-			for u, v in positive_samples]
-
 		if args.no_walks:
+
+			positive_samples = list(graph.edges())
+			positive_samples += [(v, u) # undirected graph
+				for u, v in positive_samples]
+
 			counts = np.array([graph.degree(u)
 				for u in sorted(graph)])
 
@@ -181,12 +184,18 @@ def determine_positive_and_negative_samples(graph, features, args):
 					negative_samples[n, list(graph.neighbors(n))] = 0
 	
 		else:
+			positive_samples = []
+			# positive_samples = dict()
 			counts = np.zeros(N)
 
 			print ("determining positive and negative samples", 
 				"using random walks")
 
 			walks = perform_walks(graph, features, args)
+
+			if not args.visualise:
+				del graph
+			del features
 
 			context_size = args.context_size
 
@@ -204,6 +213,12 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 						positive_samples.append((u, v))
 						positive_samples.append((v, u))
+						# if (u, v) not in positive_samples:
+						# 	positive_samples[(u, v)] = 0
+						# if (v, u) not in positive_samples:
+						# 	positive_samples[(v, u)] = 0
+						# positive_samples[(u, v)] += 1
+						# positive_samples[(v, u)] += 1
 
 						if not args.all_negs:
 							negative_samples[u, v] = 0
@@ -211,7 +226,10 @@ def determine_positive_and_negative_samples(graph, features, args):
 
 				if num_walk % 1000 == 0:  
 					print ("processed walk {:04d}/{}".format(
-						num_walk, len(walks)))
+						num_walk, 
+						# len(graph) * args.num_walks
+						len(walks)
+						))
 
 		print ("DETERMINED POSITIVE AND NEGATIVE SAMPLES")
 		print ("found {} positive sample pairs".format(
@@ -265,7 +283,7 @@ def determine_positive_and_negative_samples(graph, features, args):
 			positive_samples, probs, args.num_negative_samples)
 		probs = None
 	else:
-		print ("Training with data generator -- skipping selection of negative samples")
+		print ("Training using data generator -- skipping selection of negative samples")
 		negative_samples = None 
 
 	return positive_samples, negative_samples, probs
@@ -296,7 +314,8 @@ def perform_walks(graph, features, args):
 			feature_sim = cosine_similarity(features)
 			np.fill_diagonal(feature_sim, 0) # remove diagonal
 			feature_sim[feature_sim < 1e-15] = 0
-			feature_sim /= np.maximum(feature_sim.sum(axis=-1, keepdims=True), 1e-15) # row normalize
+			feature_sim /= np.maximum(
+				feature_sim.sum(axis=-1, keepdims=True), 1e-15) # row normalize
 		else:
 			feature_sim = None
 
@@ -319,9 +338,12 @@ def perform_walks(graph, features, args):
 			feature_sim=feature_sim, 
 			seed=args.seed)
 		node2vec_graph.preprocess_transition_probs()
-		walks = node2vec_graph.simulate_walks(num_walks=args.num_walks, walk_length=args.walk_length)
+		walks = node2vec_graph.simulate_walks(
+			num_walks=args.num_walks, 
+			walk_length=args.walk_length)
 		
 		if args.save_walks: 
+			walks = list(walks)
 			save_walks_to_file(walks, walk_file)
 			print ("saved walks to {}".format(walk_file))
 

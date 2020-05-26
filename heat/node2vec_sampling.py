@@ -32,6 +32,7 @@ class Graph():
 		np.random.seed(seed)
 		random.seed(seed)
 
+
 	def node2vec_walk(self,  start_node, walk_length,):
 		'''
 		Simulate a random walk starting from start node.
@@ -40,9 +41,6 @@ class Graph():
 		alias_nodes = self.alias_nodes
 		alias_edges = self.alias_edges
 		feature_sim = self.feature_sim
-
-		# if feature_sim is not None:
-		# 	N = len(feature_sim)
 
 		jump = False
 		preprocessed_edges = alias_edges is not None
@@ -59,7 +57,8 @@ class Graph():
 				and not (feature_sim[cur]<1e-15).all() 
 				and (np.random.rand() < self.alpha or len(cur_nbrs) == 0)):
 				# random jump based on attribute similarity
-				next_ = np.searchsorted(feature_sim[cur], np.random.rand())
+				next_ = np.searchsorted(feature_sim[cur],
+					np.random.rand())
 				walk.append(next_)
 				jump = True
 
@@ -96,10 +95,15 @@ class Graph():
 		for _ in range(num_walks):
 			random.shuffle(nodes)
 			for node in nodes:
-				walks.append(self.node2vec_walk(node, walk_length=walk_length, ))
+				walks.append(self.node2vec_walk(node, 
+					walk_length=walk_length, ))
+
 				if i % 1000 == 0:
 					print ("performed walk {:04d}/{}".format(i, num_walks*len(graph)))
 				i += 1
+
+				# yield self.node2vec_walk(node, 
+				# 	walk_length=walk_length, )
 
 		return walks
 
