@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.linear_model import LogisticRegressionCV
+from sklearn.svm import SVC
 from sklearn.model_selection import StratifiedShuffleSplit, StratifiedKFold
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import (roc_auc_score, 
@@ -13,7 +14,9 @@ from sklearn.preprocessing import LabelBinarizer
 
 from skmultilearn.model_selection import IterativeStratification
 
-from heat.utils import load_data, hyperboloid_to_klein, poincare_ball_to_hyperboloid, hyperboloid_to_poincare_ball
+from heat.utils import (load_data, hyperboloid_to_klein, 
+	poincare_ball_to_hyperboloid, hyperboloid_to_poincare_ball,
+	hyperboloid_to_poincare_ball, poincare_ball_to_klein)
 from evaluation_utils import check_complete, touch, threadsafe_save_test_results, load_embedding
 
 import functools
@@ -45,9 +48,10 @@ def evaluate_kfold_label_classification(
 	k=10):
 	assert len(labels.shape) == 2
 	
-	model = LogisticRegressionCV(
-		max_iter=1000, 
-		n_jobs=-1)
+	# model = LogisticRegressionCV(
+	# 	max_iter=1000, 
+	# 	n_jobs=-1)
+	model = SVC(probability=True)
 
 	if labels.shape[1] == 1:
 		print ("single label clasification")
@@ -96,8 +100,9 @@ def evaluate_node_classification(
 	f1_micros = np.zeros((n_repeats, len(label_percentages)))
 	f1_macros = np.zeros((n_repeats, len(label_percentages)))
 	
-	model = LogisticRegressionCV(max_iter=1000,
-		n_jobs=-1)
+	# model = LogisticRegressionCV(max_iter=1000,
+	# 	n_jobs=-1)
+	model = SVC(probability=True)
 
 	if labels.shape[1] == 1:
 		print ("single label clasification")
@@ -219,14 +224,20 @@ def main():
 
 	if args.dist_fn == "hyperboloid":
 		print ("loaded a hyperboloid embedding")
-		print ("projecting from hyperboloid to klein")
-		embedding = hyperboloid_to_klein(embedding)
+		# print ("projecting from hyperboloid to klein")
+		# embedding = hyperboloid_to_klein(embedding)
+		print ("projecting from hyperboloid to poincare")
+		embedding = hyperboloid_to_poincare_ball(embedding)
+		print ("projecting from poincare to klein")
+		embedding = poincare_ball_to_klein(embedding)
 
 	elif args.dist_fn == "poincare":
 		print ("loaded a poincare embedding")
+		# print ("projecting from poincare to klein")
+		# embedding = poincare_ball_to_hyperboloid(embedding)
+		# embedding = hyperboloid_to_klein(embedding)
 		print ("projecting from poincare to klein")
-		embedding = poincare_ball_to_hyperboloid(embedding)
-		embedding = hyperboloid_to_klein(embedding)
+		embedding = poincare_ball_to_klein(embedding)
 
 	test_results = {}
 	

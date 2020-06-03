@@ -96,10 +96,14 @@ def load_embedding(embedding_filename):
 	return embedding_df
 
 def hyperboloid_to_poincare_ball(X):
-	return X[:,:-1] / (1 + X[:,-1,None])
+	return X[:,:-1] / (1 + X[:,-1:])
 
 def hyperboloid_to_klein(X):
-	return X[:,:-1] / X[:,-1,None]
+	return X[:,:-1] / X[:,-1:]
+
+def poincare_ball_to_klein(X):
+	norm = np.linalg.norm(X, axis=-1, keepdims=True)
+	return 2 * norm / (1 + norm**2) * X / norm
 
 def poincare_ball_to_hyperboloid(X):
 	x = 2 * X
