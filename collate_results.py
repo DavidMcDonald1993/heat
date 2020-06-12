@@ -42,7 +42,7 @@ def main():
 
 	exp = "{}_experiment".format(args.exp)
 	dims = ["dim={:03}".format(dim) for dim in (5, 10, 25, 50)]
-	baseline_algs = ["nk"] + ["aane", "abrw", "tadw", 
+	baseline_algs = ["nk"] + ["aane", "tadw", 
 		"attrpure", "deepwalk", "sagegcn"] 
 	heat_algs = ["alpha={:.02f}".format(alpha) 
 			for alpha in (0, 0.05, 0.1, 0.2, 0.5, 1.0)]
@@ -89,7 +89,7 @@ def main():
 					results_df.mean(0), name=algorithm
 				))
 
-				std_df = mean_df.append(pd.Series(
+				std_df = std_df.append(pd.Series(
 					results_df.std(0), name=algorithm
 				))
 
@@ -136,7 +136,6 @@ def main():
 				p /= 2 # one tailed ttest
 				p[t<0] = 1-p[t<0]
 				
-
 				t = pd.Series(t, index=index, name="t-statistic")
 				p = pd.Series(p, index=index, name="p-value")
 				reject_null = pd.Series(p < critical_value, 
@@ -144,7 +143,6 @@ def main():
 					name="rejected_null?")
 
 				ttest_df = pd.DataFrame([m1, m2, t, p, reject_null], )
-
 
 				ttest_df_filename = os.path.join(ttest_dir,
 					"{}_{}_ttest-{}-{}.csv".format(dataset, dim,
