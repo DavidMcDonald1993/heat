@@ -63,6 +63,7 @@ def main():
 		for dataset in datasets:
 
 			mean_df = pd.DataFrame()
+			std_df = pd.DataFrame()
 			sem_df = pd.DataFrame()
 
 			dfs = dict()# store dfs for ttests
@@ -88,6 +89,10 @@ def main():
 					results_df.mean(0), name=algorithm
 				))
 
+				std_df = mean_df.append(pd.Series(
+					results_df.std(0), name=algorithm
+				))
+
 				sem_df = sem_df.append(pd.Series(
 					results_df.sem(0), name=algorithm
 				))
@@ -96,6 +101,11 @@ def main():
 				"{}_{}_means.csv".format(dataset, dim))
 			print ("writing to", mean_filename)
 			mean_df.to_csv(mean_filename)
+
+			std_filename = os.path.join(output_dir_,
+				"{}_{}_stds.csv".format(dataset, dim))
+			print ("writing to", std_filename)
+			std_df.to_csv(std_filename)
 
 			sem_filename = os.path.join(output_dir_,
 				"{}_{}_sems.csv".format(dataset, dim))
