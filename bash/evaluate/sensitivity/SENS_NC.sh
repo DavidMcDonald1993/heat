@@ -3,7 +3,7 @@
 #SBATCH --job-name=SENSNC
 #SBATCH --output=SENSNC_%A_%a.out
 #SBATCH --error=SENSNC_%A_%a.err
-#SBATCH --array=0-1199
+#SBATCH --array=0-3149
 #SBATCH --time=10-00:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=5G
