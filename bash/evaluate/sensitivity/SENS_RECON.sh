@@ -1,21 +1,18 @@
 #!/bin/bash
 
-#SBATCH --job-name=HEATLP
-#SBATCH --output=HEATLP_%A_%a.out
-#SBATCH --error=HEATLP_%A_%a.err
-#SBATCH --array=0-3599
+#SBATCH --job-name=SENSRECON
+#SBATCH --output=SENSRECON_%A_%a.out
+#SBATCH --error=SESRECON_%A_%a.err
+#SBATCH --array=0-3149
 #SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=5G
 
-
 datasets=(cora_ml citeseer ppi pubmed mit)
-dims=(5 10 25 50)
+dims=(5)
 seeds=({0..29})
-alphas=(00 05 10 20 50 100)
-exp=lp_experiment
-
-
+alphas=(00 05 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100)
+exp=reconstruction_experiment
 
 num_datasets=${#datasets[@]}
 num_dims=${#dims[@]}
@@ -34,31 +31,35 @@ alpha=${alphas[$alpha_id]}
 
 if [ $alpha -eq 100 ];
 then
-	alpha=1.00
+    alpha=1.00
 else
-	alpha=0.$alpha
+    alpha=0.$alpha
 fi
 
 echo $dataset $dim $seed $alpha
 
-
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz
-embedding_dir=embeddings/${dataset}/${exp}
-removed_edges_dir=$(printf edgelists/${dataset}/seed=%03d/removed_edges ${seed})
+embedding_dir=embeddings/${dataset}/nc_experiment
 
 test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" ${dim})
 embedding_dir=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/" ${seed} ${dim})
 echo $embedding_dir
 
-args=$(echo --edgelist ${edgelist} --removed_edges_dir ${removed_edges_dir} \
-    --dist_fn hyperboloid \
+args=$(echo --edgelist ${edgelist} --dist_fn hyperboloid \
     --embedding ${embedding_dir} --seed ${seed} \
     --test-results-dir ${test_results})
 echo $args
 
-module purge
-module load bluebear
-module load apps/python3/3.5.2
+if [ ! -f ${test_results}/${seed}.pkl ]
+then
 
-python evaluate_lp.py ${args}
+    module purge
+    module load bluebear
+    module load future/0.16.0-foss-2018b-Python-3.6.6
+
+    python evaluate_reconstruction.py ${args}
+
+else
+    echo ${test_results}/${seed}.pkl already exists
+fi

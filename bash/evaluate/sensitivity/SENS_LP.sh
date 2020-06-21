@@ -1,18 +1,19 @@
 #!/bin/bash
 
-#SBATCH --job-name=HEATNC
-#SBATCH --output=HEATNC_%A_%a.out
-#SBATCH --error=HEATNC_%A_%a.err
-#SBATCH --array=0-3599
-#SBATCH --time=10-00:00:00
+#SBATCH --job-name=SENSLP
+#SBATCH --output=SENSLP_%A_%a.out
+#SBATCH --error=SENSLP_%A_%a.err
+#SBATCH --array=0-3149
+#SBATCH --time=1-00:00:00
 #SBATCH --ntasks=1
 #SBATCH --mem=5G
+
 
 datasets=(cora_ml citeseer ppi pubmed mit)
 dims=(5 10 25 50)
 seeds=({0..29})
-alphas=(00 05 10 20 50 100)
-exp=nc_experiment
+alphas=(00 05 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100)
+exp=lp_experiment
 
 num_datasets=${#datasets[@]}
 num_dims=${#dims[@]}
@@ -38,26 +39,30 @@ fi
 
 echo $dataset $dim $seed $alpha
 
-
 data_dir=datasets/${dataset}
-edgelist=${data_dir}/edgelist.tsv.gz 
-features=${data_dir}/feats.csv.gz 
-labels=${data_dir}/labels.csv.gz 
+edgelist=${data_dir}/edgelist.tsv.gz
 embedding_dir=embeddings/${dataset}/${exp}
+removed_edges_dir=$(printf edgelists/${dataset}/seed=%03d/removed_edges ${seed})
 
 test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" ${dim})
 embedding_dir=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/" ${seed} ${dim})
 echo $embedding_dir
 
-args=$(echo --edgelist ${edgelist} --labels ${labels} \
+args=$(echo --edgelist ${edgelist} \
+    --removed_edges_dir ${removed_edges_dir} \
     --dist_fn hyperboloid \
     --embedding ${embedding_dir} --seed ${seed} \
     --test-results-dir ${test_results})
 echo $args
 
-module purge
-module load bluebear
-module load Python/3.6.3-iomkl-2018a
-pip install --user numpy pandas networkx scikit-learn scikit-multilearn matplotlib
 
-python evaluate_nc.py ${args}
+if [ ! -f ${test_results}/${seed}.pkl ]
+then
+    module purge
+    module load bluebear
+    module load future/0.16.0-foss-2018b-Python-3.6.6
+
+    python evaluate_lp.py ${args}
+else
+    echo ${test_results}/${seed}.pkl already exists 
+fi

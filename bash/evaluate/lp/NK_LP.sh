@@ -44,8 +44,13 @@ args=$(echo --edgelist ${edgelist} --removed_edges_dir ${removed_edges_dir} \
     --test-results-dir ${test_results})
 echo $args
 
-module purge
-module load bluebear
-module load apps/python3/3.5.2
+if [ ! -f ${test_results}/${seed}.pkl ]
+then
+    module purge
+    module load bluebear
+    module load future/0.16.0-foss-2018b-Python-3.6.6
 
-python evaluate_lp.py ${args}
+    python evaluate_lp.py ${args}
+else 
+    echo ${test_results}/${seed}.pkl already exists 
+fi

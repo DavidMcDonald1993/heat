@@ -6,6 +6,8 @@ import networkx as nx
 
 import argparse
 
+import pkl as pkl
+
 from heat.utils import load_data
 from evaluation_utils import check_complete, load_embedding, compute_scores, evaluate_rank_AUROC_AP, evaluate_mean_average_precision, touch, threadsafe_save_test_results
 from remove_utils import sample_non_edges
@@ -44,15 +46,16 @@ def main():
 	test_results_dir = args.test_results_dir
 	if not os.path.exists(test_results_dir):
 		os.makedirs(test_results_dir, exist_ok=True)
+	
 	test_results_filename = os.path.join(test_results_dir, 
-		"test_results.csv")
+		"{}.pkl".format(args.seed))
 
-	if check_complete(test_results_filename, args.seed):
-		return
+	# if check_complete(test_results_filename, args.seed):
+	# 	return
 
-	test_results_lock_filename = os.path.join(test_results_dir, 
-		"test_results.lock")
-	touch(test_results_lock_filename)
+	# test_results_lock_filename = os.path.join(test_results_dir, 
+	# 	"test_results.lock")
+	# touch(test_results_lock_filename)
 
 	graph, _, _ = load_data(args)
 	assert not args.directed 
@@ -102,12 +105,6 @@ def main():
 		args.dist_fn)
 	test_results.update({"map_recon": map_recon})
 
-	# precisions_at_k = [(k, 
-	# 	evaluate_precision_at_k(embedding,  
-	# 		test_edges, 
-	# 		args.dist_fn,
-	# 		k=k))
-	# 		for k in (1, 3, 5, 10)]
 	for k, pk in precisions_at_k.items():
 		print ("precision at", k, pk)
 	test_results.update({"p@{}".format(k): pk
@@ -116,8 +113,12 @@ def main():
 	print ("saving test results to {}".format(
 		test_results_filename))
 
-	threadsafe_save_test_results(test_results_lock_filename, 
-		test_results_filename, args.seed, data=test_results )
+	test_results = pd.Series(test_results)
+	with open(test_results_filename, "wb") as f:
+		pkl.dump(test_results, f, pkl.HIGHEST_PROTOCOL)
+
+	# threadsafe_save_test_results(test_results_lock_filename, 
+	# 	test_results_filename, args.seed, data=test_results )
 
 	print ("done")
 
