@@ -17,7 +17,7 @@ from skmultilearn.model_selection import IterativeStratification
 from heat.utils import (load_data, hyperboloid_to_klein, 
 	poincare_ball_to_hyperboloid, hyperboloid_to_poincare_ball,
 	hyperboloid_to_poincare_ball, poincare_ball_to_klein)
-from evaluation_utils import check_complete, touch, threadsafe_save_test_results, load_embedding
+from evaluation_utils import load_embedding
 
 import functools
 import fcntl

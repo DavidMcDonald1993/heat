@@ -6,7 +6,7 @@ import networkx as nx
 
 import argparse
 
-import pkl as pkl
+import pickle as pkl
 
 from heat.utils import load_data
 from evaluation_utils import check_complete, load_embedding, compute_scores, evaluate_rank_AUROC_AP, evaluate_mean_average_precision, touch, threadsafe_save_test_results
