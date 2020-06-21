@@ -5,8 +5,6 @@ import os
 from scipy.stats import ttest_ind
 import itertools
 
-import pickle as pkl
-
 def make_dir(d):
 	if not os.path.exists(d):
 		print ("making directory", d)
@@ -43,15 +41,14 @@ def main():
 	datasets = ["cora_ml", "citeseer", "ppi", "pubmed", "mit"]
 
 	exp = "{}_experiment".format(args.exp)
-	dims = ["dim={:03}".format(dim) for dim in (5, 10, 25, 50)]
-	baseline_algs = ["nk"] + ["aane", "tadw", 
-		"attrpure", "deepwalk", "sagegcn"] 
+	dims = ["dim={:03}".format(dim) for dim in (5, )]
+	baseline_algs = []
 	heat_algs = ["alpha={:.02f}".format(alpha) 
-			for alpha in (0, 0.05, 0.1, 0.2, 0.5, 1.0)]
+			for alpha in np.arange(0, 1.05, 0.05)]
 
 	algorithms = baseline_algs + heat_algs
 
-	output_dir = os.path.join(args.output, exp) 
+	output_dir = os.path.join(args.output, exp, "sensitivity") 
 	make_dir(output_dir)
 
 	critical_value = 0.05
@@ -68,7 +65,7 @@ def main():
 			std_df = pd.DataFrame()
 			sem_df = pd.DataFrame()
 
-			dfs = dict()# store dfs for ttests
+			dfs = dict() # store dfs for ttests
 
 			for algorithm in algorithms:
 
@@ -82,15 +79,16 @@ def main():
 
 				# results_df = pd.read_csv(results_file, 
 				# 	index_col=0, sep=",")
-
+				
 				results_df = []
 				for seed in range(num_seeds):
-					results_file = os.path.join(args.test_results_path, 
-					dataset,
-					exp,
-					algorithm,
-					dim,
-					"{}.pkl".format(seed))
+					results_filename = os.path.join(
+						args.test_results_path, 
+							dataset,
+							exp,
+							dim,
+							algorithm,
+							"{}.pkl".format(seed))
 					print ("reading results from", results_filename)
 					assert os.path.exists(results_filename)
 					with open(results_filename, "rb") as f:
