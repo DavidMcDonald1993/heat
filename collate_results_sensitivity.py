@@ -87,8 +87,8 @@ def main():
 						args.test_results_path, 
 							dataset,
 							exp,
-							dim,
 							algorithm,
+							dim,
 							"{}.pkl".format(seed))
 					print ("reading results from", results_filename)
 					assert os.path.exists(results_filename)
