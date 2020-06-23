@@ -19,7 +19,6 @@ num_dims=${#dims[@]}
 num_seeds=${#seeds[@]}
 num_methods=${#methods[@]}
 
-
 dataset_id=$((SLURM_ARRAY_TASK_ID / (num_methods * num_seeds * num_dims) % num_datasets))
 dim_id=$((SLURM_ARRAY_TASK_ID / (num_methods * num_seeds) % num_dims))
 seed_id=$((SLURM_ARRAY_TASK_ID / num_methods % num_seeds))
@@ -32,7 +31,6 @@ method=${methods[$method_id]}
 
 echo $dataset $dim $seed $method
 
-
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz
 
@@ -43,18 +41,17 @@ removed_edges_dir=$(printf edgelists/${dataset}/seed=%03d/removed_edges ${seed})
 
 test_results=$(printf "test_results/${dataset}/${exp}/${method}/dim=%03d/" ${dim})
 
-args=$(echo --edgelist ${edgelist} --removed_edges_dir ${removed_edges_dir} \
-    --dist_fn euclidean \
-    --embedding ${embedding_dir} --seed ${seed} \
-    --test-results-dir ${test_results})
-echo $args
-
-
 if [ ! -f ${test_results}/${seed}.pkl ]
 then
     module purge
     module load bluebear
     module load future/0.16.0-foss-2018b-Python-3.6.6
+
+    args=$(echo --edgelist ${edgelist} --removed_edges_dir ${removed_edges_dir} \
+        --dist_fn euclidean \
+        --embedding ${embedding_dir} --seed ${seed} \
+        --test-results-dir ${test_results})
+    echo $args
 
     python evaluate_lp.py ${args}
 else 

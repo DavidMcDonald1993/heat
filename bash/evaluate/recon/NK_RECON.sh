@@ -30,16 +30,12 @@ echo $dataset $dim $seed
 
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz
-embedding_dir=../poincare-embeddings/embeddings/${dataset}
 
-test_results=$(printf "test_results/${dataset}/${exp}/nk/dim=%03d/" ${dim})
+embedding_dir=../poincare-embeddings/embeddings/${dataset}
 embedding_dir=$(printf "${embedding_dir}/dim=%02d/seed=%03d/nc_experiment" ${dim} ${seed})
 echo $embedding_dir
 
-args=$(echo --edgelist ${edgelist} --dist_fn poincare \
-    --embedding ${embedding_dir} --seed ${seed} \
-    --test-results-dir ${test_results})
-echo $args
+test_results=$(printf "test_results/${dataset}/${exp}/nk/dim=%03d/" ${dim})
 
 
 if [ ! -f ${test_results}/${seed}.pkl ]
@@ -48,6 +44,11 @@ then
     module purge
     module load bluebear
     module load future/0.16.0-foss-2018b-Python-3.6.6
+    
+    args=$(echo --edgelist ${edgelist} --dist_fn poincare \
+        --embedding ${embedding_dir} --seed ${seed} \
+        --test-results-dir ${test_results})
+    echo $args
 
     python evaluate_reconstruction.py ${args}
 else

@@ -48,7 +48,6 @@ echo $embedding_dir
 
 test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" ${dim})
 
-
 if [ ! -f ${test_results}/${seed}.pkl ]
 then
     module purge

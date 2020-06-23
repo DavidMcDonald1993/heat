@@ -8,7 +8,6 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=5G
 
-
 datasets=(cora_ml citeseer ppi pubmed mit)
 dims=(5 10 25 50)
 seeds=({0..29})
@@ -48,9 +47,6 @@ echo $embedding_dir
 removed_edges_dir=$(printf edgelists/${dataset}/seed=%03d/removed_edges ${seed})
 
 test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" ${dim})
-
-
-
 
 if [ ! -f ${test_results}/${seed}.pkl ]
 then
