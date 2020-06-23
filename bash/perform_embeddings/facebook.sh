@@ -41,8 +41,6 @@ else
 	alpha=0.$alpha
 fi
 
-exp=nc_experiment
-
 echo $dataset $dim $seed $alpha $exp
 
 data_dir=datasets/${dataset}

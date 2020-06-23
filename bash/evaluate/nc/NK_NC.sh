@@ -27,23 +27,16 @@ seed=${seeds[$seed_id]}
 
 echo $dataset $dim $seed 
 
-
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz 
 features=${data_dir}/feats.csv.gz 
 labels=${data_dir}/labels.csv.gz 
-embedding_dir=../poincare-embeddings/embeddings/${dataset}
 
-test_results=$(printf "test_results/${dataset}/${exp}/nk/dim=%03d/" ${dim})
+embedding_dir=../poincare-embeddings/embeddings/${dataset}
 embedding_dir=$(printf "${embedding_dir}/dim=%02d/seed=%03d/${exp}" ${dim} ${seed})
 echo $embedding_dir
 
-args=$(echo --edgelist ${edgelist} --labels ${labels} \
-    --dist_fn poincare \
-    --embedding ${embedding_dir} --seed ${seed} \
-    --test-results-dir ${test_results})
-echo $args
-
+test_results=$(printf "test_results/${dataset}/${exp}/nk/dim=%03d/" ${dim})
 
 if [ ! -f ${test_results}/${seed}.pkl ]
 then
@@ -51,6 +44,12 @@ then
     module load bluebear
     module load Python/3.6.3-iomkl-2018a
     pip install --user numpy pandas networkx scikit-learn scikit-multilearn
+
+    args=$(echo --edgelist ${edgelist} --labels ${labels} \
+        --dist_fn poincare \
+        --embedding ${embedding_dir} --seed ${seed} \
+        --test-results-dir ${test_results})
+    echo $args
 
     python evaluate_nc.py ${args}
 else 

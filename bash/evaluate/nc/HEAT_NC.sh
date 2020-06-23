@@ -42,17 +42,12 @@ data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz 
 features=${data_dir}/feats.csv.gz 
 labels=${data_dir}/labels.csv.gz 
-embedding_dir=embeddings/${dataset}/${exp}
 
-test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" ${dim})
-embedding_dir=$(printf "${embedding_dir}/alpha=${alpha}/seed=%03d/dim=%03d/" ${seed} ${dim})
+embedding_dir=$(printf "embeddings/${dataset}/${exp}/alpha=${alpha}/seed=%03d/dim=%03d/" ${seed} ${dim})
 echo $embedding_dir
 
-args=$(echo --edgelist ${edgelist} --labels ${labels} \
-    --dist_fn hyperboloid \
-    --embedding ${embedding_dir} --seed ${seed} \
-    --test-results-dir ${test_results})
-echo $args
+test_results=$(printf "test_results/${dataset}/${exp}/alpha=${alpha}/dim=%03d/" ${dim})
+
 
 if [ ! -f ${test_results}/${seed}.pkl ]
 then
@@ -60,6 +55,12 @@ then
     module load bluebear
     module load Python/3.6.3-iomkl-2018a
     pip install --user numpy pandas networkx scikit-learn scikit-multilearn matplotlib
+
+    args=$(echo --edgelist ${edgelist} --labels ${labels} \
+        --dist_fn hyperboloid \
+        --embedding ${embedding_dir} --seed ${seed} \
+        --test-results-dir ${test_results})
+    echo $args
 
     python evaluate_nc.py ${args}
 else 

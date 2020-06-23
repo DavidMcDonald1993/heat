@@ -35,11 +35,13 @@ echo $dataset $dim $seed $method
 
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz
+
 embedding_dir=$(echo ../OpenANE/embeddings/${dataset}/${exp}/${dim}/${method}/${seed})
+echo $embedding_dir
+
 removed_edges_dir=$(printf edgelists/${dataset}/seed=%03d/removed_edges ${seed})
 
 test_results=$(printf "test_results/${dataset}/${exp}/${method}/dim=%03d/" ${dim})
-echo $embedding_dir
 
 args=$(echo --edgelist ${edgelist} --removed_edges_dir ${removed_edges_dir} \
     --dist_fn euclidean \
