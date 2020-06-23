@@ -48,7 +48,7 @@ def main():
 
 	algorithms = baseline_algs + heat_algs
 
-	output_dir = os.path.join(args.output, exp, "sensitivity") 
+	output_dir = os.path.join(args.output,  "sensitivity", exp,) 
 	make_dir(output_dir)
 
 	critical_value = 0.05
