@@ -6,6 +6,8 @@ import os
 from scipy.stats import ttest_ind
 import itertools
 
+import pickle as pkl
+
 def make_dir(d):
 	if not os.path.exists(d):
 		print ("making directory", d)
