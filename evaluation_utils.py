@@ -313,8 +313,6 @@ def evaluate_mean_average_precision(
 		nodes_sorted = scores.argsort()
 
 		for k in ks:
-			if len(true_neighbours) < k:
-				continue
 			nodes_sorted_ = nodes_sorted[-k:]
 			s = np.mean([neighbours[u] in true_neighbours 
 				for u in nodes_sorted_])
@@ -325,7 +323,7 @@ def evaluate_mean_average_precision(
 
 
 	mAP = np.mean(precisions)
-	print ("MAP", mAP)
+	print ("mAP", mAP)
 
 	pks = {k: (np.mean(v) if len(v) > 0 else 0)
 			for k, v in pks.items()}
