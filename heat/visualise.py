@@ -148,9 +148,9 @@ def draw_graph(graph, embedding, labels, path, s=25):
 
     print ("saving two-dimensional poincare plot to {}".format(path))
 
-    fig = plt.figure()
-    title = "Two dimensional poincare plot"
-    plt.suptitle(title)
+    fig = plt.figure(figsize=(10, 10))
+    # title = "Two dimensional poincare plot"
+    # plt.suptitle(title)
     
     ax = fig.add_subplot(111)
 
@@ -181,12 +181,15 @@ def draw_graph(graph, embedding, labels, path, s=25):
     nx.draw_networkx_edges(graph, pos=pos, width=.05, node_size=node_sizes)
     # nx.draw_networkx_edge_labels(graph, pos=pos, edge_labels=nx.get_edge_attributes(graph, name="weight"))
 
+    print ("drawing poincare disk plot and saving to", path)
     plt.savefig(path)
     plt.close()
 
 def plot_degree_dist(graph, name, filename):
 
-    fig = plt.figure()
+    plt.style.use("ggplot")
+
+    fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111)
 
     degrees = sorted(dict(graph.degree(weight="weight")).values())
@@ -199,15 +202,19 @@ def plot_degree_dist(graph, name, filename):
     deg = deg[idx]
     counts = counts[idx]
 
+    counts = counts.astype(float) / counts.sum()
+
     m, c = np.polyfit(np.log(deg), np.log(counts), 1)
     y_fit = np.exp(m*np.log(deg) + c)
 
     ax.scatter(deg, counts, marker="x")
     ax.plot(deg, y_fit, ':', c="r")
-    ax.set(title="{} Degree Distribution".format(name), 
+    ax.set(
+        # title="",
+        # title="{} Degree Distribution".format(name), 
         xscale="log", yscale="log", 
-        xlabel="Connections", ylabel="Frequency",)
-    ax.set_ylim(bottom=.9)
+        xlabel="Degree", ylabel="Probability",)
+    # ax.set_ylim(bottom=.9)
     # plt.show()
     print ("saving degree distribution plot to", filename)
     plt.savefig(filename)

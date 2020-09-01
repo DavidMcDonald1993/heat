@@ -3,7 +3,7 @@
 #SBATCH --job-name=HEATSEN
 #SBATCH --output=HEATSEN_%A_%a.out
 #SBATCH --error=HEATSEN_%A_%a.err
-#SBATCH --array=0-2999
+#SBATCH --array=0-1799
 #SBATCH --time=10-00:00:00
 #SBATCH --ntasks=2
 #SBATCH --mem=10G
@@ -13,7 +13,7 @@ e=5
 datasets=(cora_ml citeseer pubmed ppi mit)
 dims=(5)
 seeds=({0..9})
-alphas=(15 25 30 35 40 45 55 60 65 70 75 80 85 90 95)
+alphas=(05 10 15 25 30 35 40 45 55 60 65 70 75 80 85 90 95 100)
 exps=(nc_experiment lp_experiment)
 
 num_datasets=${#datasets[@]}

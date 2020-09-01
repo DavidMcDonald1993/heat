@@ -3,7 +3,7 @@
 #SBATCH --job-name=HEATCORA
 #SBATCH --output=HEATCORA_%A_%a.out
 #SBATCH --error=HEATCORA_%A_%a.err
-#SBATCH --array=0-1439
+#SBATCH --array=0-479
 #SBATCH --time=10-00:00:00
 #SBATCH --ntasks=2
 #SBATCH --mem=10G
@@ -13,8 +13,8 @@ e=5
 datasets=(cora_ml)
 dims=(5 10 25 50)
 seeds=({0..29})
-alphas=(00 05 10 20 50 100)
-exps=(lp_experiment nc_experiment)
+alphas=(00 20)
+exps=(nc_experiment lp_experiment)
 
 num_datasets=${#datasets[@]}
 num_dims=${#dims[@]}
@@ -71,7 +71,7 @@ then
 	--use-generator --workers 1 \
 	--context-size 10 --all-negs \
 	--seed ${seed} --dim ${dim} \
-	--alpha ${alpha} -e ${e})
+	--alpha ${alpha} -e ${e} -v)
 
 	ulimit -c 0
 	python main.py ${args}

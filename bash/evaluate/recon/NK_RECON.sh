@@ -31,7 +31,7 @@ echo $dataset $dim $seed
 data_dir=datasets/${dataset}
 edgelist=${data_dir}/edgelist.tsv.gz
 
-embedding_dir=../poincare-embeddings/embeddings/${dataset}
+embedding_dir=../poincare-embeddings/embeddings/undirected/${dataset}
 embedding_dir=$(printf "${embedding_dir}/dim=%02d/seed=%03d/nc_experiment" ${dim} ${seed})
 echo $embedding_dir
 

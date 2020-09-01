@@ -93,7 +93,8 @@ def load_data(args):
 def load_embedding(embedding_filename):
 	assert embedding_filename.endswith(".csv.gz")
 	embedding_df = pd.read_csv(embedding_filename, index_col=0)
-	return embedding_df
+	embedding_df = embedding_df.reindex(sorted(embedding_df.index))
+	return embedding_df.values
 
 def hyperboloid_to_poincare_ball(X):
 	return X[:,:-1] / (1 + X[:,-1:])
