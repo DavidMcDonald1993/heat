@@ -34,7 +34,7 @@ to activate it.
 # How to use:
 Run the code with 
 ```bash
-python main.py --edgelist path/to/edgelist.tsv --features path/to/features.csv -e num_epochs
+python main.py --edgelist path/to/edgelist.tsv --features path/to/features.csv -e *num_epochs* --embedding path/to/save/embedding --alpha *alpha_value*
 ```
 Additional options can be viewed with 
 ```bash
