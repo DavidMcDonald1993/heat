@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import argparse
 import random
 import numpy as np
@@ -13,9 +12,6 @@ from keras import backend as K
 from keras.callbacks import Callback, TerminateOnNaN, EarlyStopping
 
 import tensorflow as tf
-# from tensorflow.python.framework import ops
-# from tensorflow.python.ops import math_ops, control_flow_ops
-# from tensorflow.python.training import optimizer
 
 from heat.utils import hyperboloid_to_poincare_ball, load_data, load_embedding
 from heat.utils import determine_positive_and_negative_samples
@@ -24,27 +20,10 @@ from heat.generators import TrainingDataGenerator
 from heat.visualise import draw_graph, plot_degree_dist
 from heat.callbacks import Checkpointer
 from heat.models import build_model, load_weights
-from heat.optimizers import ReimannianOptimizer
+from heat.optimizers import RiemannianOptimizer
 
 K.set_floatx("float64")
 K.set_epsilon(1e-15)
-
-np.set_printoptions(suppress=True)
-
-# TensorFlow wizardry
-config = tf.ConfigProto()
-
-# Don't pre-allocate memory; allocate as-needed
-config.gpu_options.allow_growth = True
- 
-# Only allow a total of half the GPU memory to be allocated
-# config.gpu_options.per_process_gpu_memory_fraction = 0.5
-
-config.log_device_placement=False
-config.allow_soft_placement=True
-
-# Create a session with the above options specified.
-K.tensorflow_backend.set_session(tf.Session(config=config))
 
 def parse_args():
 	'''
@@ -166,11 +145,12 @@ def main():
 	
 	model = build_model(num_nodes, args)
 	model, initial_epoch = load_weights(model, args)
-	optimizer = ReimannianOptimizer(lr=args.lr)
+	optimizer = RiemannianOptimizer(lr=args.lr)
 	loss = hyperbolic_softmax_loss(sigma=args.sigma)
 	model.compile(optimizer=optimizer, 
 		loss=loss, 
-		target_tensors=[tf.placeholder(dtype=tf.int64)])
+		target_tensors=[tf.placeholder(dtype=tf.int64)]
+		)
 	model.summary()
 
 	callbacks = [

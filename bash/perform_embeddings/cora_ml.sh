@@ -5,7 +5,7 @@
 #SBATCH --error=HEATCORA_%A_%a.err
 #SBATCH --array=0-479
 #SBATCH --time=10-00:00:00
-#SBATCH --ntasks=2
+#SBATCH -c 2
 #SBATCH --mem=10G
 
 e=5
@@ -69,7 +69,7 @@ then
 	--embedding ${embedding_dir} --walks ${walks_dir} \
 	--num-walks 10 --walk-length 80 \
 	--use-generator --workers 1 \
-	--context-size 10 --all-negs \
+	--context-size 10 \
 	--seed ${seed} --dim ${dim} \
 	--alpha ${alpha} -e ${e} -v)
 

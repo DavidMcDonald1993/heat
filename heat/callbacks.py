@@ -57,11 +57,3 @@ class Checkpointer(Callback):
 
 		embedding_df = pd.DataFrame(embedding, index=self.nodes)
 		embedding_df.to_csv(filename, compression="gzip")
-
-		poincare_embedding = hyperboloid_to_poincare_ball(
-			embedding)
-		norms = np.linalg.norm(poincare_embedding, axis=-1)
-		print ("MIN", norms.min(), 
-			"MEAN", norms.mean(),
-			"MAX", norms.max())
-		print (np.linalg.norm(poincare_embedding.mean(0)))

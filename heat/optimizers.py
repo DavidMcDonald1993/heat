@@ -9,13 +9,13 @@ def minkowski_dot(x, y):
 	return K.batch_dot(x[...,:-1], y[...,:-1], axes=axes) - \
 		K.batch_dot(x[...,-1:], y[...,-1:], axes=axes)
 
-class ReimannianOptimizer(optimizer.Optimizer):
+class RiemannianOptimizer(optimizer.Optimizer):
 	
     def __init__(self, 
         lr=0.1, 
         use_locking=False,
-        name="ReimannianOptimizer"):
-        super(ReimannianOptimizer, self).\
+        name="RiemannianOptimizer"):
+        super(RiemannianOptimizer, self).\
             __init__(use_locking, name)
         self.lr = lr
 
@@ -32,6 +32,9 @@ class ReimannianOptimizer(optimizer.Optimizer):
             - self.lr * tangent_grad)
         
         return tf.assign(var, exp_map)
+
+    def _resource_apply_dense(self, grad, var):
+        return self._apply_dense(grad, var)
         
     def _apply_sparse(self, grad, var):
         indices = grad.indices
@@ -55,6 +58,9 @@ class ReimannianOptimizer(optimizer.Optimizer):
         return tf.scatter_update(ref=var, 
             indices=indices, updates=exp_map, 
             name="scatter_update")
+
+    def _resource_apply_sparse(self, grad, var):
+        return self._apply_sparse(grad, var)    
 
     def project_onto_tangent_space(self, 
         hyperboloid_point, minkowski_ambient):

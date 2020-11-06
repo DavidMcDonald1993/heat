@@ -11,7 +11,7 @@ import keras.backend as K
 from heat.utils import load_embedding
 
 
-def hyperboloid_initializer(shape, r_max=1e-3):
+def hyperboloid_initializer(shape, r_max=1e-3, dtype=K.floatx()):
 
 	def poincare_ball_to_hyperboloid(X, append_t=True):
 		x = 2 * X
@@ -21,7 +21,7 @@ def hyperboloid_initializer(shape, r_max=1e-3):
 		return 1 / (1. - K.sum(K.square(X), axis=-1, keepdims=True)) * x
 
 	w = tf.random_uniform(shape=shape, minval=-r_max, 
-		maxval=r_max, dtype=K.floatx())
+		maxval=r_max, dtype=dtype)
 	return poincare_ball_to_hyperboloid(w)
 
 class HyperboloidEmbeddingLayer(Layer):
@@ -37,7 +37,7 @@ class HyperboloidEmbeddingLayer(Layer):
 	def build(self, input_shape):
 		# Create a trainable weight variable for this layer.
 		self.embedding = self.add_weight(name='embedding', 
-		  shape=(self.num_nodes, self.embedding_dim),
+		  shape=(self.num_nodes, self.embedding_dim+1),
 		  initializer=hyperboloid_initializer,
 		  trainable=True)
 		super(HyperboloidEmbeddingLayer, self).build(input_shape)

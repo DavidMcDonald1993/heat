@@ -21,16 +21,6 @@ class TrainingDataGenerator(Sequence):
 		self.num_negative_samples = args.num_negative_samples
 		self.model = model
 
-		# print ("determining shortest paths")
-		# import networkx as nx
-		# if not os.path.exists("sps.npy"):
-		# 	self.sps = nx.floyd_warshall_numpy(graph,
-		# 		nodelist=sorted(graph))
-		# 	np.save("sps.npy", self.sps)
-		# else:
-		# 	self.sps = np.load("sps.npy")
-		# print ("done")
-		
 	def get_training_sample(self, batch_positive_samples):
 		num_negative_samples = self.num_negative_samples
 		probs = self.probs
@@ -59,12 +49,6 @@ class TrainingDataGenerator(Sequence):
 			(batch_idx + 1) * batch_size]
 		training_sample = self.get_training_sample(
 			batch_positive_samples)
-
-		# for row in training_sample:
-		# 	u, v = row[:2]
-		# 	assert self.sps[u, v] <= 10
-		# 	for v_prime in row[2:]:
-		# 		assert self.sps[u, v] < self.sps[u, v_prime], (self.sps[u, v], self.sps[u, v_prime])
 
 		target = np.zeros((training_sample.shape[0], 1, 1), 
 			dtype=np.int64)
