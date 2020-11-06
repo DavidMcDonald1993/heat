@@ -34,7 +34,7 @@ Run the code with
 python main.py --edgelist path/to/edgelist.tsv --features path/to/features.csv -e num_epochs
 '''
 Additional options can be viewed with 
-'''
+'''bash
 python main.py --help
 '''
 
