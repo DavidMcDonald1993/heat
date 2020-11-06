@@ -3,21 +3,14 @@ Reference implementation of algorithm described in https://link.springer.com/cha
 
 Authors: David MCDONALD (davemcdonald93@gmail.com) and Shan HE (s.he@cs.bham.ac.uk)
 
-## Requirements:
-Package 
--------------
-Python3
--------------
-Numpy
--------------
-Scipy
--------------
-Scikit-learn
--------------
-Scikit-multilearn
--------------
-Keras
--------------
+# Requirements:
+
+* Python3
+* Numpy
+* Scipy
+* Scikit-learn
+* Scikit-multilearn
+* Keras
 
 ## Required packages (pip)
 Install the required packages with 
@@ -38,7 +31,7 @@ conda activate heat-env
 to activate it. 
 
 
-## How to use:
+# How to use:
 Run the code with 
 ```bash
 python main.py --edgelist path/to/edgelist.tsv --features path/to/features.csv -e num_epochs
@@ -49,18 +42,21 @@ python main.py --help
 ```
 
 
-## Input Data Format
+# Input Data Format
+## Graph
 Graphs are given as tab-separated edgelists in the form:
--------------
-u | v | w
--------------
-where w is the weight of the connection between nodes u and v
-u and v should be integers
-every int in [0, N-1] must appear in the edgelist
+```
+u\tv\tw
+```
 
+* where w is the weight of the connection between nodes u and v
+* u and v must be integers
+* every int in [0, N-1] must appear in the edgelist
+
+## Node attributes and labels
 labels and features should be comma separated tables indexed by node id
 
-## Citation:
+# Citation:
 If you find this useful, please use the following citation
 ```
 @inproceedings{mcdonald2020heat,
